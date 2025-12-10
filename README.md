@@ -8,7 +8,7 @@ A Rust port of the [Rich](https://github.com/Textualize/rich) Python library for
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
 
 <p align="center">
-  <img src="assets/demo.gif" alt="richrs demo" width="700">
+  <img src="assets/demo.gif" alt="richrs demo" width="900">
 </p>
 
 ## Overview
@@ -95,7 +95,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/styling.png" alt="Text styling" width="500">
+<img src="assets/styling.png" alt="Text styling" width="700">
 
 ### Panels
 
@@ -114,7 +114,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/panels.png" alt="Panels" width="400">
+<img src="assets/panels.png" alt="Panels" width="600">
 
 ### Tables
 
@@ -138,7 +138,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/tables.png" alt="Tables" width="350">
+<img src="assets/tables.png" alt="Tables" width="550">
 
 ### Trees
 
@@ -161,7 +161,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/trees.png" alt="Trees" width="300">
+<img src="assets/trees.png" alt="Trees" width="500">
 
 ### Progress Bars
 
@@ -181,7 +181,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/progress.gif" alt="Progress bars" width="500">
+<img src="assets/progress.gif" alt="Progress bars" width="700">
 
 ### Spinners
 
@@ -203,7 +203,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/spinners.gif" alt="Spinners" width="500">
+<img src="assets/spinners.gif" alt="Spinners" width="700">
 
 ### Status (Spinner with Message)
 
