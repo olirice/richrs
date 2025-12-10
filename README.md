@@ -373,34 +373,6 @@ richrs requires **Rust 1.85** or later.
 - `syntect` - Syntax highlighting (feature: `syntax`)
 - `pulldown-cmark` - Markdown parsing (feature: `markdown`)
 
-## Contributing
-
-Contributions are welcome! Please ensure:
-
-1. All tests pass: `cargo test`
-2. Code passes strict lints: `cargo clippy`
-3. Documentation is complete: `cargo doc`
-4. Format is correct: `cargo fmt`
-
-### Development
-
-```bash
-# Run tests
-cargo test
-
-# Run with all features
-cargo test --all-features
-
-# Check lints
-cargo clippy --all-features
-
-# Build documentation
-cargo doc --all-features --open
-
-# Run benchmarks
-cargo bench
-```
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
