@@ -1,3 +1,7 @@
+// Test runner uses common JSON extraction patterns
+#![allow(clippy::manual_let_else)]
+#![allow(clippy::redundant_closure_for_method_calls)]
+
 //! Test runner binary for bilingual Python/Rust testing.
 //!
 //! This binary accepts JSON input describing tests to run and outputs
@@ -100,16 +104,13 @@ fn color_to_string(color: &Color) -> String {
 
 /// Runs a style parsing test.
 fn run_style_parse_test(data: &serde_json::Value) -> TestResponse {
-    let style_str = match data.get("style").and_then(|v| v.as_str()) {
-        Some(s) => s,
-        None => {
-            return TestResponse {
-                success: false,
-                output: None,
-                error: Some("missing 'style' field in test data".to_owned()),
-                data: None,
-            };
-        }
+    let Some(style_str) = data.get("style").and_then(|v| v.as_str()) else {
+        return TestResponse {
+            success: false,
+            output: None,
+            error: Some("missing 'style' field in test data".to_owned()),
+            data: None,
+        };
     };
 
     match Style::parse(style_str) {
@@ -145,10 +146,7 @@ fn run_style_render_test(data: &serde_json::Value) -> TestResponse {
         }
     };
 
-    let text_str = data
-        .get("text")
-        .and_then(|v| v.as_str())
-        .unwrap_or("test");
+    let text_str = data.get("text").and_then(|v| v.as_str()).unwrap_or("test");
 
     match Style::parse(style_str) {
         Ok(style) => {
@@ -395,10 +393,7 @@ fn run_emoji_lookup_test(data: &serde_json::Value) -> TestResponse {
 /// Runs a table rendering test.
 fn run_table_render_test(data: &serde_json::Value) -> TestResponse {
     let columns = match data.get("columns").and_then(|v| v.as_array()) {
-        Some(cols) => cols
-            .iter()
-            .filter_map(|c| c.as_str())
-            .collect::<Vec<_>>(),
+        Some(cols) => cols.iter().filter_map(|c| c.as_str()).collect::<Vec<_>>(),
         None => {
             return TestResponse {
                 success: false,

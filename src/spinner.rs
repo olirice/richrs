@@ -14,9 +14,9 @@
 //! ```
 
 use crate::errors::{Error, Result};
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::LazyLock;
 
 /// Spinner configuration data.
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ struct SpinnerData {
 }
 
 /// A map of spinner names to their configurations.
-static SPINNERS: Lazy<HashMap<&'static str, SpinnerData>> = Lazy::new(|| {
+static SPINNERS: LazyLock<HashMap<&'static str, SpinnerData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
 
     // dots - Classic Braille dots spinner
@@ -669,6 +669,7 @@ impl<'a> Iterator for SpinnerFrames<'a> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

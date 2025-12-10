@@ -256,7 +256,7 @@ impl Text {
     /// * `words` - Words to highlight
     /// * `style` - Style to apply to matching words
     /// * `case_sensitive` - Whether matching is case-sensitive
-    pub fn highlight_words(&mut self, words: &[&str], style: Style, case_sensitive: bool) {
+    pub fn highlight_words(&mut self, words: &[&str], style: &Style, case_sensitive: bool) {
         let plain_text = self.plain.clone();
         let plain_lower = plain_text.to_lowercase();
         let search_text = if case_sensitive {
@@ -304,7 +304,7 @@ impl Text {
     /// # Errors
     ///
     /// Returns an error if the regex pattern is invalid.
-    pub fn highlight_regex(&mut self, pattern: &str, style: Style) -> Result<()> {
+    pub fn highlight_regex(&mut self, pattern: &str, style: &Style) -> Result<()> {
         let re = regex::Regex::new(pattern)?;
         let plain_text = self.plain.clone();
 
@@ -460,7 +460,8 @@ impl Text {
                     } else {
                         line_len
                     };
-                    text.spans.push(Span::new(new_start, new_end, span.style.clone()));
+                    text.spans
+                        .push(Span::new(new_start, new_end, span.style.clone()));
                 }
             }
 
@@ -527,7 +528,9 @@ impl Text {
                 } else {
                     span.end
                 };
-                result.spans.push(Span::new(span.start, new_end, span.style.clone()));
+                result
+                    .spans
+                    .push(Span::new(span.start, new_end, span.style.clone()));
             }
         }
 
@@ -715,10 +718,7 @@ mod tests {
 
     #[test]
     fn test_text_assemble() {
-        let text = Text::assemble([
-            ("hello ", None),
-            ("world", Some(Style::new().bold())),
-        ]);
+        let text = Text::assemble([("hello ", None), ("world", Some(Style::new().bold()))]);
         assert_eq!(text.plain(), "hello world");
         assert_eq!(text.spans.len(), 1);
     }
@@ -728,8 +728,8 @@ mod tests {
         let text = Text::from_str("hello\nworld");
         let lines = text.split_lines();
         assert_eq!(lines.len(), 2);
-        assert_eq!(lines.first().map(|t| t.plain()), Some("hello"));
-        assert_eq!(lines.get(1).map(|t| t.plain()), Some("world"));
+        assert_eq!(lines.first().map(Text::plain), Some("hello"));
+        assert_eq!(lines.get(1).map(Text::plain), Some("world"));
     }
 
     #[test]
@@ -771,7 +771,7 @@ mod tests {
     fn test_text_highlight_words() {
         let mut text = Text::from_str("hello world hello");
         let style = Style::new().with_color(Color::Standard(StandardColor::Red));
-        text.highlight_words(&["hello"], style, false);
+        text.highlight_words(&["hello"], &style, false);
 
         // Should have 2 spans for "hello"
         assert_eq!(text.spans.len(), 2);
@@ -781,7 +781,7 @@ mod tests {
     fn test_text_highlight_regex() {
         let mut text = Text::from_str("foo123bar456");
         let style = Style::new().bold();
-        text.highlight_regex(r"\d+", style).ok();
+        text.highlight_regex(r"\d+", &style).ok();
 
         // Should have 2 spans for numbers
         assert_eq!(text.spans.len(), 2);

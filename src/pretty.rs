@@ -147,13 +147,9 @@ impl Pretty {
             // Add indent guides if enabled
             if self.indent_guides && indent_level > 0 {
                 let guide_style = Style::default().dim();
-                for i in 0..indent_level {
+                for _ in 0..indent_level {
                     let spaces = " ".repeat(self.indent_size.saturating_sub(1));
-                    if i == indent_level.saturating_sub(1) {
-                        segments.push(Segment::styled(format!("{}│", spaces), guide_style.clone()));
-                    } else {
-                        segments.push(Segment::styled(format!("{}│", spaces), guide_style.clone()));
-                    }
+                    segments.push(Segment::styled(format!("{}│", spaces), guide_style.clone()));
                 }
             } else {
                 // Regular indentation
@@ -236,16 +232,8 @@ impl Pretty {
         }
 
         if !current.is_empty() {
-            // Check if it's a number
-            let is_number = current.trim().parse::<f64>().is_ok()
-                || current.trim() == "true"
-                || current.trim() == "false";
-            if is_number {
-                // Blue for numbers/booleans
-                segments.push(Segment::new(current));
-            } else {
-                segments.push(Segment::new(current));
-            }
+            // Add remaining content
+            segments.push(Segment::new(current));
         }
 
         segments
@@ -362,6 +350,6 @@ mod tests {
     fn test_inspect_with_options() {
         let value = vec![vec![1, 2], vec![3, 4]];
         let output = inspect_with_options(&value, 2, Some(1));
-        assert!(output.len() > 0);
+        assert!(!output.is_empty());
     }
 }

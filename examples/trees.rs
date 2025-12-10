@@ -12,10 +12,7 @@ fn main() -> Result<()> {
             .with_child(TreeNode::new("main.rs"))
             .with_child(TreeNode::new("lib.rs")),
     );
-    tree.add(
-        TreeNode::new("tests")
-            .with_child(TreeNode::new("integration.rs")),
-    );
+    tree.add(TreeNode::new("tests").with_child(TreeNode::new("integration.rs")));
     tree.add(TreeNode::new("Cargo.toml"));
     tree.add(TreeNode::new("README.md"));
 

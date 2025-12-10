@@ -12,14 +12,14 @@
 //! ```
 
 use crate::errors::{Error, Result};
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::LazyLock;
 
 /// A map of emoji names to their Unicode characters.
 ///
 /// This includes the most commonly used emojis from Python Rich's emoji database.
-static EMOJI_MAP: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+static EMOJI_MAP: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     // Generated from Python Rich's emoji database
     // Each entry maps an emoji name to its Unicode character(s)
@@ -861,6 +861,7 @@ impl fmt::Display for Emoji {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

@@ -231,8 +231,7 @@ mod tests {
         let text = segments.plain_text();
 
         // Should have top padding, content, bottom padding
-        let lines: Vec<&str> = text.lines().collect();
-        assert!(lines.len() >= 3); // top, content, bottom
+        assert!(text.lines().count() >= 3); // top, content, bottom
     }
 
     #[test]

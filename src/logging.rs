@@ -177,7 +177,11 @@ impl RichHandler {
         // Level
         if self.show_level {
             let style = level.style();
-            output.push_str(&format!("{}{}\x1b[0m ", style.to_ansi(), level.padded_label()));
+            output.push_str(&format!(
+                "{}{}\x1b[0m ",
+                style.to_ansi(),
+                level.padded_label()
+            ));
         }
 
         // Path

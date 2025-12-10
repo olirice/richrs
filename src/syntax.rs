@@ -208,7 +208,10 @@ impl Syntax {
         };
 
         // Calculate line number width
-        let max_line_num = self.start_line.saturating_add(end_idx).saturating_sub(start_idx);
+        let max_line_num = self
+            .start_line
+            .saturating_add(end_idx)
+            .saturating_sub(start_idx);
         let line_num_width = max_line_num.to_string().len();
 
         // Add top padding
@@ -216,8 +219,16 @@ impl Syntax {
             segments.push(Segment::newline());
         }
 
-        for (idx, line) in lines.iter().enumerate().skip(start_idx).take(end_idx.saturating_sub(start_idx)) {
-            let line_num = self.start_line.saturating_add(idx).saturating_sub(start_idx);
+        for (idx, line) in lines
+            .iter()
+            .enumerate()
+            .skip(start_idx)
+            .take(end_idx.saturating_sub(start_idx))
+        {
+            let line_num = self
+                .start_line
+                .saturating_add(idx)
+                .saturating_sub(start_idx);
 
             // Check if this line should be highlighted
             let is_highlighted = self
@@ -281,7 +292,10 @@ impl Syntax {
         };
 
         // Calculate line number width
-        let max_line_num = self.start_line.saturating_add(end_idx).saturating_sub(start_idx);
+        let max_line_num = self
+            .start_line
+            .saturating_add(end_idx)
+            .saturating_sub(start_idx);
         let line_num_width = max_line_num.to_string().len();
 
         // Add top padding
@@ -289,8 +303,16 @@ impl Syntax {
             segments.push(Segment::newline());
         }
 
-        for (idx, line) in lines.iter().enumerate().skip(start_idx).take(end_idx.saturating_sub(start_idx)) {
-            let line_num = self.start_line.saturating_add(idx).saturating_sub(start_idx);
+        for (idx, line) in lines
+            .iter()
+            .enumerate()
+            .skip(start_idx)
+            .take(end_idx.saturating_sub(start_idx))
+        {
+            let line_num = self
+                .start_line
+                .saturating_add(idx)
+                .saturating_sub(start_idx);
 
             // Add left padding
             if self.padding > 0 {

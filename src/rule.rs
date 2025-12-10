@@ -4,7 +4,7 @@
 //! with a centered title.
 
 use crate::errors::Result;
-use crate::measure::{cell_len, Measurable, MeasureOptions, Measurement};
+use crate::measure::{Measurable, MeasureOptions, Measurement, cell_len};
 use crate::segment::{Segment, Segments};
 use crate::style::Style;
 use crate::text::{Justify, Text};
@@ -110,13 +110,18 @@ impl Rule {
                 let padding_width: usize = 2; // Space on each side of title
                 let min_line_width: usize = 1; // Minimum line on each side
 
-                if title_width.saturating_add(padding_width.saturating_mul(2)).saturating_add(min_line_width.saturating_mul(2)) > width
+                if title_width
+                    .saturating_add(padding_width.saturating_mul(2))
+                    .saturating_add(min_line_width.saturating_mul(2))
+                    > width
                 {
                     // Not enough space, just render the line
                     self.render_line(&mut segments, width);
                 } else {
                     // Calculate line widths based on alignment
-                    let available = width.saturating_sub(title_width).saturating_sub(padding_width.saturating_mul(2));
+                    let available = width
+                        .saturating_sub(title_width)
+                        .saturating_sub(padding_width.saturating_mul(2));
                     let (left_width, right_width) = match self.align {
                         Justify::Left | Justify::Default => {
                             (min_line_width, available.saturating_sub(min_line_width))

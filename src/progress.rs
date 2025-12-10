@@ -166,8 +166,12 @@ impl Default for ProgressBar {
             complete_char: '━',
             incomplete_char: '━',
             pulse_char: '━',
-            complete_style: Some(Style::new().with_color(crate::color::Color::Standard(crate::color::StandardColor::Green))),
-            incomplete_style: Some(Style::new().with_color(crate::color::Color::Standard(crate::color::StandardColor::BrightBlack))),
+            complete_style: Some(Style::new().with_color(crate::color::Color::Standard(
+                crate::color::StandardColor::Green,
+            ))),
+            incomplete_style: Some(Style::new().with_color(crate::color::Color::Standard(
+                crate::color::StandardColor::BrightBlack,
+            ))),
             finished_style: None,
         }
     }
@@ -225,39 +229,36 @@ impl ProgressBar {
     pub fn render(&self, percentage: Option<f64>) -> Segments {
         let mut segments = Segments::new();
 
-        match percentage {
-            Some(pct) => {
-                #[allow(clippy::cast_possible_truncation)]
-                #[allow(clippy::cast_sign_loss)]
-                let completed_width = ((pct * (self.width as f64)).round() as usize).min(self.width);
-                let remaining_width = self.width.saturating_sub(completed_width);
+        if let Some(pct) = percentage {
+            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_sign_loss)]
+            let completed_width = ((pct * (self.width as f64)).round() as usize).min(self.width);
+            let remaining_width = self.width.saturating_sub(completed_width);
 
-                // Completed portion
-                let completed = self.complete_char.to_string().repeat(completed_width);
-                if let Some(ref style) = self.complete_style {
-                    segments.push(Segment::styled(completed, style.clone()));
+            // Completed portion
+            let completed = self.complete_char.to_string().repeat(completed_width);
+            if let Some(ref style) = self.complete_style {
+                segments.push(Segment::styled(completed, style.clone()));
+            } else {
+                segments.push(Segment::new(completed));
+            }
+
+            // Incomplete portion
+            if remaining_width > 0 {
+                let incomplete = self.incomplete_char.to_string().repeat(remaining_width);
+                if let Some(ref style) = self.incomplete_style {
+                    segments.push(Segment::styled(incomplete, style.clone()));
                 } else {
-                    segments.push(Segment::new(completed));
-                }
-
-                // Incomplete portion
-                if remaining_width > 0 {
-                    let incomplete = self.incomplete_char.to_string().repeat(remaining_width);
-                    if let Some(ref style) = self.incomplete_style {
-                        segments.push(Segment::styled(incomplete, style.clone()));
-                    } else {
-                        segments.push(Segment::new(incomplete));
-                    }
+                    segments.push(Segment::new(incomplete));
                 }
             }
-            None => {
-                // Indeterminate progress (pulse animation would go here)
-                let bar = self.incomplete_char.to_string().repeat(self.width);
-                if let Some(ref style) = self.incomplete_style {
-                    segments.push(Segment::styled(bar, style.clone()));
-                } else {
-                    segments.push(Segment::new(bar));
-                }
+        } else {
+            // Indeterminate progress (pulse animation would go here)
+            let bar = self.incomplete_char.to_string().repeat(self.width);
+            if let Some(ref style) = self.incomplete_style {
+                segments.push(Segment::styled(bar, style.clone()));
+            } else {
+                segments.push(Segment::new(bar));
             }
         }
 
@@ -511,7 +512,12 @@ pub fn format_duration(duration: Duration) -> String {
     let hours = mins.checked_div(60).unwrap_or(0);
 
     if hours > 0 {
-        format!("{}:{:02}:{:02}", hours, mins.checked_rem(60).unwrap_or(0), secs.checked_rem(60).unwrap_or(0))
+        format!(
+            "{}:{:02}:{:02}",
+            hours,
+            mins.checked_rem(60).unwrap_or(0),
+            secs.checked_rem(60).unwrap_or(0)
+        )
     } else if mins > 0 {
         format!("{}:{:02}", mins, secs.checked_rem(60).unwrap_or(0))
     } else {

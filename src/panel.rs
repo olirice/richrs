@@ -5,7 +5,7 @@
 
 use crate::box_chars::BoxChars;
 use crate::errors::Result;
-use crate::measure::{cell_len, Measurable, MeasureOptions, Measurement};
+use crate::measure::{Measurable, MeasureOptions, Measurement, cell_len};
 use crate::segment::{Segment, Segments};
 use crate::style::Style;
 use crate::text::Text;
@@ -196,14 +196,24 @@ impl Panel {
     /// Calculates the content width.
     fn calculate_content_width(&self, max_width: usize) -> usize {
         if let Some(w) = self.width {
-            return w.saturating_sub(2).saturating_sub(self.padding.0).saturating_sub(self.padding.2);
+            return w
+                .saturating_sub(2)
+                .saturating_sub(self.padding.0)
+                .saturating_sub(self.padding.2);
         }
 
         if self.expand {
-            max_width.saturating_sub(2).saturating_sub(self.padding.0).saturating_sub(self.padding.2)
+            max_width
+                .saturating_sub(2)
+                .saturating_sub(self.padding.0)
+                .saturating_sub(self.padding.2)
         } else {
             let content_width = cell_len(self.content.plain());
-            let title_width = self.title.as_ref().map(|t| cell_len(t.plain())).unwrap_or(0);
+            let title_width = self
+                .title
+                .as_ref()
+                .map(|t| cell_len(t.plain()))
+                .unwrap_or(0);
             let subtitle_width = self
                 .subtitle
                 .as_ref()
@@ -211,7 +221,12 @@ impl Panel {
                 .unwrap_or(0);
 
             let needed = content_width.max(title_width).max(subtitle_width);
-            needed.min(max_width.saturating_sub(2).saturating_sub(self.padding.0).saturating_sub(self.padding.2))
+            needed.min(
+                max_width
+                    .saturating_sub(2)
+                    .saturating_sub(self.padding.0)
+                    .saturating_sub(self.padding.2),
+            )
         }
     }
 
@@ -235,7 +250,10 @@ impl Panel {
             if title_len.saturating_add(4) <= inner_width {
                 // Space for title with padding
                 let left_line_len = 1;
-                let right_line_len = inner_width.saturating_sub(title_len).saturating_sub(left_line_len).saturating_sub(2);
+                let right_line_len = inner_width
+                    .saturating_sub(title_len)
+                    .saturating_sub(left_line_len)
+                    .saturating_sub(2);
 
                 // Left line
                 let left_line = self.box_chars.horizontal.to_string().repeat(left_line_len);
@@ -252,7 +270,11 @@ impl Panel {
                 let title_segments = title.to_segments();
                 if let Some(ref style) = self.title_style {
                     for seg in title_segments.iter() {
-                        let combined_style = seg.style.clone().map(|s| s.combine(style)).unwrap_or_else(|| style.clone());
+                        let combined_style = seg
+                            .style
+                            .clone()
+                            .map(|s| s.combine(style))
+                            .unwrap_or_else(|| style.clone());
                         segments.push(Segment::styled(seg.text.clone(), combined_style));
                     }
                 } else {
@@ -317,7 +339,10 @@ impl Panel {
 
             if subtitle_len.saturating_add(4) <= inner_width {
                 let left_line_len = 1;
-                let right_line_len = inner_width.saturating_sub(subtitle_len).saturating_sub(left_line_len).saturating_sub(2);
+                let right_line_len = inner_width
+                    .saturating_sub(subtitle_len)
+                    .saturating_sub(left_line_len)
+                    .saturating_sub(2);
 
                 // Left line
                 let left_line = self.box_chars.horizontal.to_string().repeat(left_line_len);
@@ -334,7 +359,11 @@ impl Panel {
                 let subtitle_segments = subtitle.to_segments();
                 if let Some(ref style) = self.subtitle_style {
                     for seg in subtitle_segments.iter() {
-                        let combined_style = seg.style.clone().map(|s| s.combine(style)).unwrap_or_else(|| style.clone());
+                        let combined_style = seg
+                            .style
+                            .clone()
+                            .map(|s| s.combine(style))
+                            .unwrap_or_else(|| style.clone());
                         segments.push(Segment::styled(seg.text.clone(), combined_style));
                     }
                 } else {

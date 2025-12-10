@@ -764,7 +764,9 @@ mod tests {
 
     #[test]
     fn test_parse_multiple_attributes() {
-        let style = Style::parse("bold italic underline").ok().unwrap_or_default();
+        let style = Style::parse("bold italic underline")
+            .ok()
+            .unwrap_or_default();
         assert_eq!(style.attributes.bold, Some(true));
         assert_eq!(style.attributes.italic, Some(true));
         assert_eq!(style.attributes.underline, Some(true));
@@ -800,7 +802,9 @@ mod tests {
 
     #[test]
     fn test_parse_link() {
-        let style = Style::parse("link https://example.com").ok().unwrap_or_default();
+        let style = Style::parse("link https://example.com")
+            .ok()
+            .unwrap_or_default();
         assert_eq!(style.link, Some("https://example.com".to_owned()));
     }
 

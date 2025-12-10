@@ -5,7 +5,7 @@
 
 use crate::box_chars::BoxChars;
 use crate::errors::Result;
-use crate::measure::{cell_len, Measurable, MeasureOptions, Measurement};
+use crate::measure::{Measurable, MeasureOptions, Measurement, cell_len};
 use crate::segment::{Segment, Segments};
 use crate::style::Style;
 use crate::text::{Justify, Text};
@@ -495,7 +495,11 @@ impl Table {
         for (idx, col) in self.columns.iter().enumerate() {
             // Header width
             if let Some(ref header) = col.header {
-                widths[idx] = widths.get(idx).copied().unwrap_or(0).max(cell_len(header.plain()));
+                widths[idx] = widths
+                    .get(idx)
+                    .copied()
+                    .unwrap_or(0)
+                    .max(cell_len(header.plain()));
             }
 
             // Fixed width overrides
@@ -532,7 +536,9 @@ impl Table {
             0
         };
         let padding_overhead = col_count.saturating_mul(self.padding.0.saturating_mul(2));
-        let available = max_width.saturating_sub(border_overhead).saturating_sub(padding_overhead);
+        let available = max_width
+            .saturating_sub(border_overhead)
+            .saturating_sub(padding_overhead);
 
         let total: usize = widths.iter().sum();
         if total > available && !widths.is_empty() {
@@ -638,7 +644,9 @@ impl Table {
     /// Calculates total table width.
     fn calculate_total_width(&self, widths: &[usize]) -> usize {
         let content: usize = widths.iter().sum();
-        let padding = widths.len().saturating_mul(self.padding.0.saturating_mul(2));
+        let padding = widths
+            .len()
+            .saturating_mul(self.padding.0.saturating_mul(2));
         let borders = if self.box_chars.is_some() {
             widths.len().saturating_add(1)
         } else {
@@ -768,7 +776,12 @@ impl Table {
     }
 
     /// Renders the header row.
-    fn render_header(&self, segments: &mut Segments, widths: &[usize], box_chars: Option<&BoxChars>) {
+    fn render_header(
+        &self,
+        segments: &mut Segments,
+        widths: &[usize],
+        box_chars: Option<&BoxChars>,
+    ) {
         let border_style = self.border_style.clone();
         let header_style = self.header_style.clone();
 
@@ -799,7 +812,11 @@ impl Table {
 
                 if let Some(s) = style {
                     for seg in header_segs.iter() {
-                        let combined = seg.style.clone().map(|ss| ss.combine(&s)).unwrap_or_else(|| s.clone());
+                        let combined = seg
+                            .style
+                            .clone()
+                            .map(|ss| ss.combine(&s))
+                            .unwrap_or_else(|| s.clone());
                         segments.push(Segment::styled(seg.text.clone(), combined));
                     }
                 } else {
@@ -884,7 +901,11 @@ impl Table {
 
                 if let Some(s) = style {
                     for seg in cell_segs.iter() {
-                        let combined = seg.style.clone().map(|ss| ss.combine(&s)).unwrap_or_else(|| s.clone());
+                        let combined = seg
+                            .style
+                            .clone()
+                            .map(|ss| ss.combine(&s))
+                            .unwrap_or_else(|| s.clone());
                         segments.push(Segment::styled(seg.text.clone(), combined));
                     }
                 } else {

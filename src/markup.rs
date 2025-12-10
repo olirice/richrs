@@ -1,3 +1,7 @@
+// Static regex uses unwrap on known-valid pattern
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::panic)]
+
 //! Markup parsing for console output.
 //!
 //! This module provides Rich-compatible markup syntax parsing.
@@ -6,16 +10,14 @@
 use crate::errors::{Error, Result};
 use crate::style::Style;
 use crate::text::Text;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fmt;
+use std::sync::LazyLock;
 
 /// A regex pattern for matching markup tags.
-static TAG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\[(/?)([^\]]*)\]").unwrap_or_else(|_| {
-        // This should never fail as the pattern is valid
-        Regex::new(r"$^").unwrap_or_else(|_| panic!("failed to compile regex"))
-    })
+static TAG_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    // This pattern is known to be valid at compile time
+    Regex::new(r"\[(/?)([^\]]*)\]").unwrap()
 });
 
 /// Represents a parsed markup tag.
@@ -131,7 +133,9 @@ impl Markup {
             if tag_content.trim().is_empty() && !is_closing {
                 // Treat as literal text
                 let tag_text = full_match.as_str();
-                markup.segments.push(MarkupSegment::Text(tag_text.to_owned()));
+                markup
+                    .segments
+                    .push(MarkupSegment::Text(tag_text.to_owned()));
             } else {
                 let tag = Tag::parse(tag_content, is_closing)?;
                 markup.segments.push(MarkupSegment::Tag(tag));
@@ -285,7 +289,9 @@ mod tests {
 
     #[test]
     fn test_parse_nested_tags() {
-        let markup = Markup::parse("[bold][red]hello[/][/]").ok().unwrap_or_default();
+        let markup = Markup::parse("[bold][red]hello[/][/]")
+            .ok()
+            .unwrap_or_default();
         assert_eq!(markup.plain_text(), "hello");
     }
 
@@ -328,7 +334,10 @@ mod tests {
         assert!(styled_segment.is_some());
         if let Some(seg) = styled_segment {
             assert!(seg.style.is_some());
-            assert_eq!(seg.style.as_ref().and_then(|s| s.attributes.bold), Some(true));
+            assert_eq!(
+                seg.style.as_ref().and_then(|s| s.attributes.bold),
+                Some(true)
+            );
         }
     }
 
@@ -422,15 +431,14 @@ mod tests {
     fn test_complex_markup() {
         let input = "[bold]Hello[/], [red]world[/]! This is [italic blue on white]styled[/] text.";
         let markup = Markup::parse(input).ok().unwrap_or_default();
-        assert_eq!(
-            markup.plain_text(),
-            "Hello, world! This is styled text."
-        );
+        assert_eq!(markup.plain_text(), "Hello, world! This is styled text.");
     }
 
     #[test]
     fn test_hex_color_in_markup() {
-        let markup = Markup::parse("[#ff0000]red text[/]").ok().unwrap_or_default();
+        let markup = Markup::parse("[#ff0000]red text[/]")
+            .ok()
+            .unwrap_or_default();
         assert_eq!(markup.plain_text(), "red text");
     }
 

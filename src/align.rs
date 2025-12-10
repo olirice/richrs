@@ -3,7 +3,7 @@
 //! This module provides tools for aligning text within a given width.
 
 use crate::errors::Result;
-use crate::measure::{cell_len, Measurable, MeasureOptions, Measurement};
+use crate::measure::{Measurable, MeasureOptions, Measurement, cell_len};
 use crate::segment::{Segment, Segments};
 use crate::text::{Justify, Text};
 use serde::{Deserialize, Serialize};

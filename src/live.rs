@@ -188,9 +188,8 @@ impl Live {
 
     /// Inner render function for use in threads.
     fn render_content_inner(content: &Arc<Mutex<Option<Text>>>, line_count: &Arc<Mutex<usize>>) {
-        let content_guard = match content.lock() {
-            Ok(guard) => guard,
-            Err(_) => return,
+        let Ok(content_guard) = content.lock() else {
+            return;
         };
 
         let Some(ref text) = *content_guard else {
@@ -213,7 +212,11 @@ impl Live {
         let output = segments.to_ansi();
 
         // Count lines in new output
-        let new_lines = output.chars().filter(|&c| c == '\n').count().saturating_add(1);
+        let new_lines = output
+            .chars()
+            .filter(|&c| c == '\n')
+            .count()
+            .saturating_add(1);
 
         eprint!("{}", output);
         let _ = std::io::stderr().flush();
@@ -267,6 +270,7 @@ impl Drop for Live {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

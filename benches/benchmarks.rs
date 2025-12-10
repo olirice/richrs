@@ -1,8 +1,9 @@
 //! Benchmarks for richrs components.
 
 #![allow(missing_docs)]
+#![allow(clippy::semicolon_if_nothing_returned)]
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use richrs::prelude::*;
 
 fn benchmark_style_parse(c: &mut Criterion) {
@@ -25,8 +26,7 @@ fn benchmark_markup_parse(c: &mut Criterion) {
 
     c.bench_function("markup_parse_complex", |b| {
         b.iter(|| {
-            let markup =
-                Markup::from(black_box("[bold red]Hello[/] [italic blue]World[/]"));
+            let markup = Markup::from(black_box("[bold red]Hello[/] [italic blue]World[/]"));
             markup.to_text()
         })
     });

@@ -85,7 +85,7 @@ pub mod prelude {
     pub use crate::markdown::Markdown;
     pub use crate::markup::Markup;
     pub use crate::panel::Panel;
-    pub use crate::pretty::{inspect, inspect_with_options, Pretty};
+    pub use crate::pretty::{Pretty, inspect, inspect_with_options};
     pub use crate::progress::{Progress, ProgressBar, Task};
     pub use crate::prompt::{Confirm, FloatPrompt, IntPrompt, Prompt};
     pub use crate::rule::Rule;
@@ -97,6 +97,6 @@ pub mod prelude {
     pub use crate::table::{Column, Table};
     pub use crate::text::Text;
     pub use crate::theme::Theme;
-    pub use crate::traceback::{format_error_chain, Frame, Traceback};
+    pub use crate::traceback::{Frame, Traceback, format_error_chain};
     pub use crate::tree::{Tree, TreeNode};
 }

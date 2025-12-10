@@ -59,15 +59,13 @@ impl Theme {
     /// Gets a style by name.
     #[must_use]
     pub fn get_style(&self, name: &str) -> Option<&Style> {
-        self.styles
-            .get(name)
-            .or_else(|| {
-                if self.inherit_defaults {
-                    Self::default_style(name)
-                } else {
-                    None
-                }
-            })
+        self.styles.get(name).or_else(|| {
+            if self.inherit_defaults {
+                Self::default_style(name)
+            } else {
+                None
+            }
+        })
     }
 
     /// Returns an iterator over all styles.
@@ -94,7 +92,11 @@ impl Theme {
         }
 
         for ch in name.chars() {
-            if !ch.is_ascii_lowercase() && !ch.is_ascii_digit() && ch != '.' && ch != '-' && ch != '_'
+            if !ch.is_ascii_lowercase()
+                && !ch.is_ascii_digit()
+                && ch != '.'
+                && ch != '-'
+                && ch != '_'
             {
                 return Err(Error::ThemeError {
                     message: format!(

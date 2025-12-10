@@ -173,7 +173,7 @@ fn main() -> Result<()> {
     console.flush()?;
 
     // Animate spinners
-    animate_spinners()?;
+    animate_spinners();
 
     console.print("")?;
     console.print(&format!(
@@ -194,7 +194,7 @@ fn main() -> Result<()> {
     console.print("")?;
     console.flush()?;
 
-    animate_progress_bars()?;
+    animate_progress_bars();
 
     console.print("")?;
     console.flush()?;
@@ -266,7 +266,7 @@ fn main() -> Result<()> {
     console.print("")?;
     console.flush()?;
 
-    animate_live_display()?;
+    animate_live_display();
 
     console.print("")?;
     console.flush()?;
@@ -312,7 +312,7 @@ fn pause(seconds: u64) {
 }
 
 /// Animates multiple spinners for demonstration.
-fn animate_spinners() -> Result<()> {
+fn animate_spinners() {
     let spinner_demos = [
         ("dots", "Loading data..."),
         ("line", "Processing files..."),
@@ -361,12 +361,10 @@ fn animate_spinners() -> Result<()> {
         eprintln!("\x1b[2K  \x1b[32m\x1b[0m Done!                              ");
     }
     let _ = std::io::stderr().flush();
-
-    Ok(())
 }
 
 /// Animates progress bars for demonstration using the Progress API.
-fn animate_progress_bars() -> Result<()> {
+fn animate_progress_bars() {
     // Use the actual Progress API from richrs
     let mut progress = Progress::new();
 
@@ -375,7 +373,11 @@ fn animate_progress_bars() -> Result<()> {
     let task2 = progress.add_task("Installing", Some(75), true);
     let task3 = progress.add_task("Compiling", Some(120), true);
 
-    let tasks = [(task1, 100_u64, 2_u64), (task2, 75_u64, 3_u64), (task3, 120_u64, 1_u64)];
+    let tasks = [
+        (task1, 100_u64, 2_u64),
+        (task2, 75_u64, 3_u64),
+        (task3, 120_u64, 1_u64),
+    ];
     let total_steps = 70;
     let step_delay = Duration::from_millis(50);
 
@@ -411,8 +413,6 @@ fn animate_progress_bars() -> Result<()> {
             break;
         }
     }
-
-    Ok(())
 }
 
 /// Animates a status spinner.
@@ -437,7 +437,10 @@ fn animate_status() -> Result<()> {
 
         // Show completion
         if i < messages.len().saturating_sub(1) {
-            eprintln!("\r  \x1b[32m\x1b[0m {}                    ", message.replace("...", " - done"));
+            eprintln!(
+                "\r  \x1b[32m\x1b[0m {}                    ",
+                message.replace("...", " - done")
+            );
         } else {
             eprintln!("\r  \x1b[32m\x1b[0m All systems ready!              ");
         }
@@ -447,7 +450,7 @@ fn animate_status() -> Result<()> {
 }
 
 /// Animates a live display.
-fn animate_live_display() -> Result<()> {
+fn animate_live_display() {
     let items: [(&str, usize, usize, &str); 4] = [
         ("CPU Usage", 45, 78, "%"),
         ("Memory", 2048, 3584, " MB"),
@@ -498,6 +501,4 @@ fn animate_live_display() -> Result<()> {
         eprintln!("\x1b[2K  {:12}: {:>5}{}", name, end, unit);
     }
     let _ = std::io::stderr().flush();
-
-    Ok(())
 }

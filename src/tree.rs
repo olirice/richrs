@@ -4,7 +4,7 @@
 //! parent and child nodes.
 
 use crate::errors::Result;
-use crate::measure::{cell_len, Measurable, MeasureOptions, Measurement};
+use crate::measure::{Measurable, MeasureOptions, Measurement, cell_len};
 use crate::segment::{Segment, Segments};
 use crate::style::Style;
 use crate::text::Text;
@@ -289,7 +289,10 @@ impl Tree {
 
     /// Renders a node and its children.
     fn render_node(&self, segments: &mut Segments, node: &TreeNode, prefix: &str, is_last: bool) {
-        let guide_style = node.guide_style.clone().or_else(|| self.guide_style.clone());
+        let guide_style = node
+            .guide_style
+            .clone()
+            .or_else(|| self.guide_style.clone());
 
         // Render the branch guide
         let branch = if is_last {
@@ -420,9 +423,7 @@ mod tests {
     #[test]
     fn test_tree_node_builder() {
         let style = Style::new().bold();
-        let node = TreeNode::new("Label")
-            .style(style.clone())
-            .expanded(false);
+        let node = TreeNode::new("Label").style(style.clone()).expanded(false);
         assert!(node.style.is_some());
         assert!(!node.expanded);
     }

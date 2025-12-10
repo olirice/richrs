@@ -4,7 +4,7 @@ use std::io::Write;
 use std::thread;
 use std::time::Duration;
 
-fn main() -> Result<()> {
+fn main() {
     eprintln!();
 
     let spinner_demos = [
@@ -43,5 +43,4 @@ fn main() -> Result<()> {
     }
 
     eprintln!();
-    Ok(())
 }

@@ -1,3 +1,7 @@
+// Static regex patterns use unwrap() on known-valid patterns - this is safe at compile time
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::expect_used)]
+
 //! Highlighter for automatic text highlighting.
 //!
 //! This module provides automatic highlighting of patterns in text,
@@ -118,7 +122,8 @@ impl ReprHighlighter {
 
 // Regex patterns for highlighting
 static NUMBER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?x)
+    Regex::new(
+        r"(?x)
         (?P<number>
             # Hex numbers
             0x[0-9a-fA-F]+
@@ -135,27 +140,28 @@ static NUMBER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
             # Regular integers
             -?[0-9]+
         )
-    ").unwrap()
+    ",
+    )
+    .unwrap()
 });
 
-static STRING_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?P<string>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')"#).unwrap()
-});
+static STRING_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?P<string>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')"#).unwrap());
 
-static BOOL_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b(?P<bool>true|false|True|False)\b").unwrap()
-});
+static BOOL_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b(?P<bool>true|false|True|False)\b").unwrap());
 
-static NONE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b(?P<none>None|null|nil|NULL)\b").unwrap()
-});
+static NONE_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\b(?P<none>None|null|nil|NULL)\b").unwrap());
 
-static URL_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?P<url>https?://[^\s<>"')]+)"#).unwrap()
-});
+static URL_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?P<url>https?://[^\s<>"')]+)"#).unwrap());
 
 static UUID_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?P<uuid>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})").unwrap()
+    Regex::new(
+        r"(?P<uuid>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
+    )
+    .unwrap()
 });
 
 // Note: Attribute pattern with lookahead not supported in regex crate.
@@ -224,10 +230,7 @@ impl Highlighter for ReprHighlighter {
         // Remove overlapping matches (keep earlier/longer ones)
         let mut filtered_matches: Vec<(usize, usize, &str, Style)> = Vec::new();
         for m in matches {
-            if filtered_matches
-                .last()
-                .map_or(true, |last| m.0 >= last.1)
-            {
+            if filtered_matches.last().map_or(true, |last| m.0 >= last.1) {
                 filtered_matches.push(m);
             }
         }
@@ -397,11 +400,7 @@ impl RegexHighlighter {
     }
 
     /// Adds a pattern with an associated style, returning an error on invalid regex.
-    pub fn try_pattern(
-        mut self,
-        pattern: &str,
-        style: Style,
-    ) -> Result<Self, regex::Error> {
+    pub fn try_pattern(mut self, pattern: &str, style: Style) -> Result<Self, regex::Error> {
         let regex = Regex::new(pattern)?;
         self.patterns.push((regex, style));
         Ok(self)
@@ -534,9 +533,8 @@ impl JSONHighlighter {
     }
 }
 
-static JSON_KEY_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#""([^"\\]|\\.)*"\s*:"#).unwrap()
-});
+static JSON_KEY_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#""([^"\\]|\\.)*"\s*:"#).unwrap());
 
 impl Highlighter for JSONHighlighter {
     fn highlight(&self, text: &str) -> Segments {
@@ -720,8 +718,7 @@ mod tests {
 
     #[test]
     fn test_regex_highlighter_pattern() {
-        let highlighter = RegexHighlighter::new()
-            .pattern(r"\bERROR\b", Style::default().bold());
+        let highlighter = RegexHighlighter::new().pattern(r"\bERROR\b", Style::default().bold());
         let segments = highlighter.highlight("ERROR: something failed");
         let output = segments.to_ansi();
         assert!(output.contains("ERROR"));
@@ -729,15 +726,13 @@ mod tests {
 
     #[test]
     fn test_regex_highlighter_try_pattern() {
-        let result = RegexHighlighter::new()
-            .try_pattern(r"\bWARN\b", Style::default());
+        let result = RegexHighlighter::new().try_pattern(r"\bWARN\b", Style::default());
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_regex_highlighter_invalid_pattern() {
-        let result = RegexHighlighter::new()
-            .try_pattern(r"[invalid", Style::default());
+        let result = RegexHighlighter::new().try_pattern(r"[invalid", Style::default());
         assert!(result.is_err());
     }
 

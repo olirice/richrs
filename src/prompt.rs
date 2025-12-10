@@ -171,14 +171,10 @@ impl Prompt {
             stdout.flush()?;
 
             // Read input
+            // Note: For password input, we'd ideally disable echo
+            // For now, just read normally (crossterm could be used for proper password input)
             let mut input = String::new();
-            if self.password {
-                // For password input, we'd ideally disable echo
-                // For now, just read normally (crossterm could be used for proper password input)
-                stdin.lock().read_line(&mut input)?;
-            } else {
-                stdin.lock().read_line(&mut input)?;
-            }
+            stdin.lock().read_line(&mut input)?;
 
             let input = input.trim().to_string();
 
@@ -600,9 +596,7 @@ mod tests {
 
     #[test]
     fn test_prompt_build_prompt() {
-        let prompt = Prompt::new("Choose")
-            .choices(["a", "b"])
-            .default("a");
+        let prompt = Prompt::new("Choose").choices(["a", "b"]).default("a");
         let built = prompt.build_prompt();
         assert!(built.contains("Choose"));
         assert!(built.contains("[a/b]"));

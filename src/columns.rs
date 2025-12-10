@@ -234,7 +234,9 @@ impl Columns {
         let column_width = if self.equal {
             let max_item_width = widths.iter().copied().max().unwrap_or(1);
             if self.expand {
-                render_width.checked_div(num_columns).unwrap_or(max_item_width)
+                render_width
+                    .checked_div(num_columns)
+                    .unwrap_or(max_item_width)
             } else {
                 max_item_width
             }
@@ -258,9 +260,7 @@ impl Columns {
             for row_idx in 0..num_rows {
                 let mut row = Vec::new();
                 for col_idx in 0..num_columns {
-                    let item_idx = col_idx
-                        .saturating_mul(num_rows)
-                        .saturating_add(row_idx);
+                    let item_idx = col_idx.saturating_mul(num_rows).saturating_add(row_idx);
                     if item_idx < num_items {
                         row.push(item_idx);
                     }
@@ -271,7 +271,13 @@ impl Columns {
             }
         } else {
             // Fill rows first (left to right)
-            for chunk in self.items.iter().enumerate().collect::<Vec<_>>().chunks(num_columns) {
+            for chunk in self
+                .items
+                .iter()
+                .enumerate()
+                .collect::<Vec<_>>()
+                .chunks(num_columns)
+            {
                 rows.push(chunk.iter().map(|(idx, _)| *idx).collect());
             }
         }
@@ -363,8 +369,7 @@ mod tests {
 
     #[test]
     fn test_columns_equal() {
-        let columns = Columns::new(vec!["short", "verylongitem"])
-            .equal(true);
+        let columns = Columns::new(vec!["short", "verylongitem"]).equal(true);
         assert!(columns.equal);
     }
 
@@ -403,29 +408,25 @@ mod tests {
 
     #[test]
     fn test_columns_rtl() {
-        let columns = Columns::new(vec!["first", "second"])
-            .right_to_left(true);
+        let columns = Columns::new(vec!["first", "second"]).right_to_left(true);
         assert!(columns.right_to_left);
     }
 
     #[test]
     fn test_column_first() {
-        let columns = Columns::new(vec!["1", "2", "3", "4"])
-            .column_first(true);
+        let columns = Columns::new(vec!["1", "2", "3", "4"]).column_first(true);
         assert!(columns.column_first);
     }
 
     #[test]
     fn test_columns_padding() {
-        let columns = Columns::new(vec!["a"])
-            .padding(1, 2, 3, 4);
+        let columns = Columns::new(vec!["a"]).padding(1, 2, 3, 4);
         assert_eq!(columns.padding, (1, 2, 3, 4));
     }
 
     #[test]
     fn test_columns_width() {
-        let columns = Columns::new(vec!["a"])
-            .width(40);
+        let columns = Columns::new(vec!["a"]).width(40);
         assert_eq!(columns.width, Some(40));
     }
 }

@@ -238,7 +238,8 @@ impl Segment {
                 byte_pos = idx;
                 break;
             }
-            cell_pos = cell_pos.saturating_add(unicode_width::UnicodeWidthChar::width(ch).unwrap_or(0));
+            cell_pos =
+                cell_pos.saturating_add(unicode_width::UnicodeWidthChar::width(ch).unwrap_or(0));
             byte_pos = idx.saturating_add(ch.len_utf8());
         }
 
@@ -548,18 +549,21 @@ mod tests {
         segs.push(Segment::new("hello\nworld"));
         let lines = segs.split_lines();
         assert_eq!(lines.len(), 2);
-        assert_eq!(lines.first().map(Segments::plain_text), Some("hello".to_owned()));
-        assert_eq!(lines.get(1).map(Segments::plain_text), Some("world".to_owned()));
+        assert_eq!(
+            lines.first().map(Segments::plain_text),
+            Some("hello".to_owned())
+        );
+        assert_eq!(
+            lines.get(1).map(Segments::plain_text),
+            Some("world".to_owned())
+        );
     }
 
     #[test]
     fn test_control_to_ansi() {
         assert_eq!(Control::new(ControlType::Clear).to_ansi(), "\x1b[2J");
         assert_eq!(Control::new(ControlType::Home).to_ansi(), "\x1b[H");
-        assert_eq!(
-            Control::new(ControlType::CarriageReturn).to_ansi(),
-            "\r"
-        );
+        assert_eq!(Control::new(ControlType::CarriageReturn).to_ansi(), "\r");
         assert_eq!(
             Control::with_params(ControlType::CursorUp, vec![5]).to_ansi(),
             "\x1b[5A"

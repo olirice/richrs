@@ -207,7 +207,10 @@ impl Color {
             (r, g, b)
         } else {
             return Err(Error::ColorParse {
-                message: format!("invalid hex color length: expected 3 or 6, got {}", hex.len()),
+                message: format!(
+                    "invalid hex color length: expected 3 or 6, got {}",
+                    hex.len()
+                ),
             });
         };
 
@@ -390,7 +393,11 @@ impl Color {
                 g: 160,
                 b: 122,
             }),
-            "orange_red" | "orangered" => Ok(Self::Rgb { r: 255, g: 69, b: 0 }),
+            "orange_red" | "orangered" => Ok(Self::Rgb {
+                r: 255,
+                g: 69,
+                b: 0,
+            }),
             "dark_orange" | "darkorange" => Ok(Self::Rgb {
                 r: 255,
                 g: 140,
@@ -1141,10 +1148,7 @@ mod tests {
     #[test]
     fn test_to_ansi_fg() {
         assert_eq!(Color::Default.to_ansi_fg(), "\x1b[39m");
-        assert_eq!(
-            Color::Standard(StandardColor::Red).to_ansi_fg(),
-            "\x1b[31m"
-        );
+        assert_eq!(Color::Standard(StandardColor::Red).to_ansi_fg(), "\x1b[31m");
         assert_eq!(
             Color::Standard(StandardColor::BrightRed).to_ansi_fg(),
             "\x1b[91m"
@@ -1159,10 +1163,7 @@ mod tests {
     #[test]
     fn test_to_ansi_bg() {
         assert_eq!(Color::Default.to_ansi_bg(), "\x1b[49m");
-        assert_eq!(
-            Color::Standard(StandardColor::Red).to_ansi_bg(),
-            "\x1b[41m"
-        );
+        assert_eq!(Color::Standard(StandardColor::Red).to_ansi_bg(), "\x1b[41m");
         assert_eq!(
             Color::Standard(StandardColor::BrightRed).to_ansi_bg(),
             "\x1b[101m"
@@ -1204,10 +1205,7 @@ mod tests {
 
     #[test]
     fn test_standard_color_from_code() {
-        assert_eq!(
-            StandardColor::from_code(0).ok(),
-            Some(StandardColor::Black)
-        );
+        assert_eq!(StandardColor::from_code(0).ok(), Some(StandardColor::Black));
         assert_eq!(StandardColor::from_code(1).ok(), Some(StandardColor::Red));
         assert_eq!(
             StandardColor::from_code(15).ok(),
@@ -1415,54 +1413,168 @@ mod tests {
         assert_eq!(StandardColor::from_code(0).ok(), Some(StandardColor::Black));
         assert_eq!(StandardColor::from_code(1).ok(), Some(StandardColor::Red));
         assert_eq!(StandardColor::from_code(2).ok(), Some(StandardColor::Green));
-        assert_eq!(StandardColor::from_code(3).ok(), Some(StandardColor::Yellow));
+        assert_eq!(
+            StandardColor::from_code(3).ok(),
+            Some(StandardColor::Yellow)
+        );
         assert_eq!(StandardColor::from_code(4).ok(), Some(StandardColor::Blue));
-        assert_eq!(StandardColor::from_code(5).ok(), Some(StandardColor::Magenta));
+        assert_eq!(
+            StandardColor::from_code(5).ok(),
+            Some(StandardColor::Magenta)
+        );
         assert_eq!(StandardColor::from_code(6).ok(), Some(StandardColor::Cyan));
         assert_eq!(StandardColor::from_code(7).ok(), Some(StandardColor::White));
-        assert_eq!(StandardColor::from_code(8).ok(), Some(StandardColor::BrightBlack));
-        assert_eq!(StandardColor::from_code(9).ok(), Some(StandardColor::BrightRed));
-        assert_eq!(StandardColor::from_code(10).ok(), Some(StandardColor::BrightGreen));
-        assert_eq!(StandardColor::from_code(11).ok(), Some(StandardColor::BrightYellow));
-        assert_eq!(StandardColor::from_code(12).ok(), Some(StandardColor::BrightBlue));
-        assert_eq!(StandardColor::from_code(13).ok(), Some(StandardColor::BrightMagenta));
-        assert_eq!(StandardColor::from_code(14).ok(), Some(StandardColor::BrightCyan));
-        assert_eq!(StandardColor::from_code(15).ok(), Some(StandardColor::BrightWhite));
+        assert_eq!(
+            StandardColor::from_code(8).ok(),
+            Some(StandardColor::BrightBlack)
+        );
+        assert_eq!(
+            StandardColor::from_code(9).ok(),
+            Some(StandardColor::BrightRed)
+        );
+        assert_eq!(
+            StandardColor::from_code(10).ok(),
+            Some(StandardColor::BrightGreen)
+        );
+        assert_eq!(
+            StandardColor::from_code(11).ok(),
+            Some(StandardColor::BrightYellow)
+        );
+        assert_eq!(
+            StandardColor::from_code(12).ok(),
+            Some(StandardColor::BrightBlue)
+        );
+        assert_eq!(
+            StandardColor::from_code(13).ok(),
+            Some(StandardColor::BrightMagenta)
+        );
+        assert_eq!(
+            StandardColor::from_code(14).ok(),
+            Some(StandardColor::BrightCyan)
+        );
+        assert_eq!(
+            StandardColor::from_code(15).ok(),
+            Some(StandardColor::BrightWhite)
+        );
     }
 
     #[test]
     fn test_all_standard_colors_ansi() {
         // Test ANSI codes for foreground
-        assert_eq!(Color::Standard(StandardColor::Black).to_ansi_fg(), "\x1b[30m");
-        assert_eq!(Color::Standard(StandardColor::Green).to_ansi_fg(), "\x1b[32m");
-        assert_eq!(Color::Standard(StandardColor::Yellow).to_ansi_fg(), "\x1b[33m");
-        assert_eq!(Color::Standard(StandardColor::Blue).to_ansi_fg(), "\x1b[34m");
-        assert_eq!(Color::Standard(StandardColor::Magenta).to_ansi_fg(), "\x1b[35m");
-        assert_eq!(Color::Standard(StandardColor::Cyan).to_ansi_fg(), "\x1b[36m");
-        assert_eq!(Color::Standard(StandardColor::White).to_ansi_fg(), "\x1b[37m");
-        assert_eq!(Color::Standard(StandardColor::BrightBlack).to_ansi_fg(), "\x1b[90m");
-        assert_eq!(Color::Standard(StandardColor::BrightGreen).to_ansi_fg(), "\x1b[92m");
-        assert_eq!(Color::Standard(StandardColor::BrightYellow).to_ansi_fg(), "\x1b[93m");
-        assert_eq!(Color::Standard(StandardColor::BrightBlue).to_ansi_fg(), "\x1b[94m");
-        assert_eq!(Color::Standard(StandardColor::BrightMagenta).to_ansi_fg(), "\x1b[95m");
-        assert_eq!(Color::Standard(StandardColor::BrightCyan).to_ansi_fg(), "\x1b[96m");
-        assert_eq!(Color::Standard(StandardColor::BrightWhite).to_ansi_fg(), "\x1b[97m");
+        assert_eq!(
+            Color::Standard(StandardColor::Black).to_ansi_fg(),
+            "\x1b[30m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Green).to_ansi_fg(),
+            "\x1b[32m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Yellow).to_ansi_fg(),
+            "\x1b[33m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Blue).to_ansi_fg(),
+            "\x1b[34m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Magenta).to_ansi_fg(),
+            "\x1b[35m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Cyan).to_ansi_fg(),
+            "\x1b[36m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::White).to_ansi_fg(),
+            "\x1b[37m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightBlack).to_ansi_fg(),
+            "\x1b[90m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightGreen).to_ansi_fg(),
+            "\x1b[92m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightYellow).to_ansi_fg(),
+            "\x1b[93m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightBlue).to_ansi_fg(),
+            "\x1b[94m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightMagenta).to_ansi_fg(),
+            "\x1b[95m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightCyan).to_ansi_fg(),
+            "\x1b[96m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightWhite).to_ansi_fg(),
+            "\x1b[97m"
+        );
 
         // Test ANSI codes for background
-        assert_eq!(Color::Standard(StandardColor::Black).to_ansi_bg(), "\x1b[40m");
-        assert_eq!(Color::Standard(StandardColor::Green).to_ansi_bg(), "\x1b[42m");
-        assert_eq!(Color::Standard(StandardColor::Yellow).to_ansi_bg(), "\x1b[43m");
-        assert_eq!(Color::Standard(StandardColor::Blue).to_ansi_bg(), "\x1b[44m");
-        assert_eq!(Color::Standard(StandardColor::Magenta).to_ansi_bg(), "\x1b[45m");
-        assert_eq!(Color::Standard(StandardColor::Cyan).to_ansi_bg(), "\x1b[46m");
-        assert_eq!(Color::Standard(StandardColor::White).to_ansi_bg(), "\x1b[47m");
-        assert_eq!(Color::Standard(StandardColor::BrightBlack).to_ansi_bg(), "\x1b[100m");
-        assert_eq!(Color::Standard(StandardColor::BrightGreen).to_ansi_bg(), "\x1b[102m");
-        assert_eq!(Color::Standard(StandardColor::BrightYellow).to_ansi_bg(), "\x1b[103m");
-        assert_eq!(Color::Standard(StandardColor::BrightBlue).to_ansi_bg(), "\x1b[104m");
-        assert_eq!(Color::Standard(StandardColor::BrightMagenta).to_ansi_bg(), "\x1b[105m");
-        assert_eq!(Color::Standard(StandardColor::BrightCyan).to_ansi_bg(), "\x1b[106m");
-        assert_eq!(Color::Standard(StandardColor::BrightWhite).to_ansi_bg(), "\x1b[107m");
+        assert_eq!(
+            Color::Standard(StandardColor::Black).to_ansi_bg(),
+            "\x1b[40m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Green).to_ansi_bg(),
+            "\x1b[42m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Yellow).to_ansi_bg(),
+            "\x1b[43m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Blue).to_ansi_bg(),
+            "\x1b[44m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Magenta).to_ansi_bg(),
+            "\x1b[45m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::Cyan).to_ansi_bg(),
+            "\x1b[46m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::White).to_ansi_bg(),
+            "\x1b[47m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightBlack).to_ansi_bg(),
+            "\x1b[100m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightGreen).to_ansi_bg(),
+            "\x1b[102m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightYellow).to_ansi_bg(),
+            "\x1b[103m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightBlue).to_ansi_bg(),
+            "\x1b[104m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightMagenta).to_ansi_bg(),
+            "\x1b[105m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightCyan).to_ansi_bg(),
+            "\x1b[106m"
+        );
+        assert_eq!(
+            Color::Standard(StandardColor::BrightWhite).to_ansi_bg(),
+            "\x1b[107m"
+        );
     }
 
     #[test]
@@ -1490,12 +1602,22 @@ mod tests {
     #[test]
     fn test_color_display_standard() {
         assert_eq!(Color::Standard(StandardColor::Red).to_string(), "Red");
-        assert_eq!(Color::Standard(StandardColor::BrightBlue).to_string(), "BrightBlue");
+        assert_eq!(
+            Color::Standard(StandardColor::BrightBlue).to_string(),
+            "BrightBlue"
+        );
     }
 
     #[test]
     fn test_color_rgb_constructor() {
         let color = Color::rgb(100, 150, 200);
-        assert_eq!(color, Color::Rgb { r: 100, g: 150, b: 200 });
+        assert_eq!(
+            color,
+            Color::Rgb {
+                r: 100,
+                g: 150,
+                b: 200
+            }
+        );
     }
 }

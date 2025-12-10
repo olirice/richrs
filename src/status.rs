@@ -1,3 +1,6 @@
+// Known-valid spinner names use expect
+#![allow(clippy::expect_used)]
+
 //! Status display with animated spinner.
 //!
 //! The [`Status`] struct provides a way to show a spinner with a status message
@@ -21,8 +24,8 @@ use crate::errors::Result;
 use crate::spinner::Spinner;
 use crate::style::Style;
 use std::io::Write;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -55,7 +58,9 @@ impl Status {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
-            spinner: Spinner::new("dots").unwrap_or_else(|_| Spinner::new("line").expect("line spinner should always exist")),
+            spinner: Spinner::new("dots").unwrap_or_else(|_| {
+                Spinner::new("line").expect("line spinner should always exist")
+            }),
             spinner_style: None,
             speed: 1.0,
             refresh_per_second: 12.5,

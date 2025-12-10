@@ -69,7 +69,11 @@ impl Measurement {
         } else {
             self.maximum
         };
-        let min = if self.minimum > max { max } else { self.minimum };
+        let min = if self.minimum > max {
+            max
+        } else {
+            self.minimum
+        };
         Self {
             minimum: min,
             maximum: max,
@@ -85,7 +89,11 @@ impl Measurement {
         } else {
             self.minimum
         };
-        let max = if self.maximum < min { min } else { self.maximum };
+        let max = if self.maximum < min {
+            min
+        } else {
+            self.maximum
+        };
         Self {
             minimum: min,
             maximum: max,
@@ -105,10 +113,7 @@ pub fn cell_len(s: &str) -> usize {
 /// Measures the maximum line width in a multi-line string.
 #[must_use]
 pub fn max_line_width(s: &str) -> usize {
-    s.lines()
-        .map(cell_len)
-        .max()
-        .unwrap_or(0)
+    s.lines().map(cell_len).max().unwrap_or(0)
 }
 
 /// Measures the minimum width needed to render text.
@@ -116,10 +121,7 @@ pub fn max_line_width(s: &str) -> usize {
 /// This is the width of the longest word (space-separated).
 #[must_use]
 pub fn min_width(s: &str) -> usize {
-    s.split_whitespace()
-        .map(cell_len)
-        .max()
-        .unwrap_or(0)
+    s.split_whitespace().map(cell_len).max().unwrap_or(0)
 }
 
 /// Measures text and returns both minimum and maximum widths.

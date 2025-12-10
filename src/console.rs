@@ -655,7 +655,9 @@ impl Console {
             Some(t) if !t.is_empty() => {
                 let title_len = unicode_width::UnicodeWidthStr::width(t);
                 let padding: usize = 2; // Space around title
-                let rule_len = width.saturating_sub(title_len).saturating_sub(padding.saturating_mul(2));
+                let rule_len = width
+                    .saturating_sub(title_len)
+                    .saturating_sub(padding.saturating_mul(2));
                 let half = rule_len.checked_div(2).unwrap_or(0);
                 let left = half;
                 let right = rule_len.saturating_sub(left);
@@ -881,27 +883,25 @@ fn color_to_css(color: &crate::color::Color) -> String {
 
     match color {
         Color::Default => "inherit".to_owned(),
-        Color::Standard(std) => {
-            match std {
-                StandardColor::Black => "#000000",
-                StandardColor::Red => "#cc0000",
-                StandardColor::Green => "#00cc00",
-                StandardColor::Yellow => "#cccc00",
-                StandardColor::Blue => "#0000cc",
-                StandardColor::Magenta => "#cc00cc",
-                StandardColor::Cyan => "#00cccc",
-                StandardColor::White => "#cccccc",
-                StandardColor::BrightBlack => "#666666",
-                StandardColor::BrightRed => "#ff0000",
-                StandardColor::BrightGreen => "#00ff00",
-                StandardColor::BrightYellow => "#ffff00",
-                StandardColor::BrightBlue => "#0000ff",
-                StandardColor::BrightMagenta => "#ff00ff",
-                StandardColor::BrightCyan => "#00ffff",
-                StandardColor::BrightWhite => "#ffffff",
-            }
-            .to_owned()
+        Color::Standard(std) => match std {
+            StandardColor::Black => "#000000",
+            StandardColor::Red => "#cc0000",
+            StandardColor::Green => "#00cc00",
+            StandardColor::Yellow => "#cccc00",
+            StandardColor::Blue => "#0000cc",
+            StandardColor::Magenta => "#cc00cc",
+            StandardColor::Cyan => "#00cccc",
+            StandardColor::White => "#cccccc",
+            StandardColor::BrightBlack => "#666666",
+            StandardColor::BrightRed => "#ff0000",
+            StandardColor::BrightGreen => "#00ff00",
+            StandardColor::BrightYellow => "#ffff00",
+            StandardColor::BrightBlue => "#0000ff",
+            StandardColor::BrightMagenta => "#ff00ff",
+            StandardColor::BrightCyan => "#00ffff",
+            StandardColor::BrightWhite => "#ffffff",
         }
+        .to_owned(),
         Color::Palette(idx) => format!("var(--palette-{idx})"),
         Color::Rgb { r, g, b } => format!("rgb({r}, {g}, {b})"),
     }

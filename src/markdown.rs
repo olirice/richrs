@@ -158,10 +158,7 @@ impl Markdown {
                     TagEnd::Link => {
                         if self.hyperlinks && !link_url.is_empty() {
                             let style = Style::default().underline();
-                            segments.push(Segment::styled(
-                                format!(" ({})", link_url),
-                                style.dim(),
-                            ));
+                            segments.push(Segment::styled(format!(" ({})", link_url), style.dim()));
                         }
                         _in_link = false;
                         link_url.clear();
@@ -332,7 +329,7 @@ fn process_inline_markdown(text: &str) -> Segments {
                 segments.push(Segment::new(std::mem::take(&mut current)));
             }
             let mut italic_text = String::new();
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == ch {
                     break;
                 }
@@ -345,7 +342,7 @@ fn process_inline_markdown(text: &str) -> Segments {
                 segments.push(Segment::new(std::mem::take(&mut current)));
             }
             let mut code_text = String::new();
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == '`' {
                     break;
                 }

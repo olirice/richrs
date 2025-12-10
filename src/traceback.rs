@@ -285,10 +285,7 @@ impl Traceback {
             ));
 
             // Function name
-            segments.push(Segment::styled(
-                frame.name.clone(),
-                function_style.clone(),
-            ));
+            segments.push(Segment::styled(frame.name.clone(), function_style.clone()));
             segments.push(Segment::newline());
 
             // File and line info
@@ -305,7 +302,10 @@ impl Traceback {
                     _ => file.clone(),
                 };
 
-                segments.push(Segment::styled(format!("at {}", location), file_style.clone()));
+                segments.push(Segment::styled(
+                    format!("at {}", location),
+                    file_style.clone(),
+                ));
                 segments.push(Segment::newline());
             }
 
@@ -342,7 +342,10 @@ impl Traceback {
             border_style.clone(),
         ));
         segments.push(Segment::styled(
-            self.box_chars.horizontal.to_string().repeat(width.saturating_sub(2)),
+            self.box_chars
+                .horizontal
+                .to_string()
+                .repeat(width.saturating_sub(2)),
             border_style.clone(),
         ));
         segments.push(Segment::styled(
