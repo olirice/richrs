@@ -355,36 +355,6 @@ cd richrs
 cargo run --release
 ```
 
-## Architecture
-
-richrs uses a segment-based rendering model:
-
-```
-┌─────────────┐     ┌──────────┐     ┌─────────┐
-│ Renderable  │ ──▶ │ Segments │ ──▶ │ Console │ ──▶ Terminal
-│ (Panel,     │     │ (styled  │     │ (writes │
-│  Table...)  │     │  chunks) │     │  ANSI)  │
-└─────────────┘     └──────────┘     └─────────┘
-```
-
-All renderables produce `Segment` sequences, enabling consistent handling of styled content and composable output.
-
-## Python Rich Compatibility
-
-richrs aims for pixel-perfect output compatibility with Python Rich. The same markup:
-
-```
-[bold red]Hello[/] [green]World![/]
-```
-
-produces identical ANSI output in both libraries.
-
-### API Differences
-
-- Rust-native design: builders, `Result` types, traits
-- Strict type safety and ownership semantics
-- No runtime Python interpreter required
-
 ## Minimum Supported Rust Version
 
 richrs requires **Rust 1.85** or later.
