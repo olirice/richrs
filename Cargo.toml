@@ -1,0 +1,180 @@
+[package]
+name = "richrs"
+version = "0.1.0"
+edition = "2024"
+authors = ["Oliver Rice"]
+description = "A Rust port of the Rich Python library for beautiful terminal output"
+license = "MIT"
+repository = "https://github.com/olirice/richrs"
+keywords = ["terminal", "console", "ansi", "color", "formatting"]
+categories = ["command-line-interface", "text-processing"]
+rust-version = "1.85"
+default-run = "richrs"
+
+[lib]
+name = "richrs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "richrs"
+path = "src/main.rs"
+
+[[bin]]
+name = "richrs_test_runner"
+path = "src/test_runner.rs"
+
+[dependencies]
+# Terminal capabilities
+crossterm = "0.28"
+# Unicode handling
+unicode-width = "0.2"
+unicode-segmentation = "1.12"
+# Error handling
+thiserror = "2.0"
+# Regex for markup parsing
+regex = "1.11"
+# Lazy initialization
+once_cell = "1.20"
+# Serialization for test comparison
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+# Testing framework
+pretty_assertions = "1.4"
+# Property-based testing
+proptest = "1.5"
+# Code coverage
+cargo-tarpaulin = "0.31"
+# Snapshot testing for output comparison
+insta = { version = "1.41", features = ["json"] }
+# Criterion for benchmarks
+criterion = "0.5"
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[features]
+default = []
+# Enable all features
+full = ["syntax", "markdown", "json"]
+# Syntax highlighting support (requires syntect)
+syntax = ["dep:syntect"]
+# Markdown rendering support (requires pulldown-cmark)
+markdown = ["dep:pulldown-cmark"]
+# JSON pretty printing
+json = []
+
+[dependencies.syntect]
+version = "5.2"
+optional = true
+default-features = false
+features = ["default-fancy"]
+
+[dependencies.pulldown-cmark]
+version = "0.10"
+optional = true
+
+[profile.dev]
+# Faster compile times in dev
+opt-level = 0
+debug = true
+
+[profile.release]
+# Maximum optimization
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.test]
+# Enable debug info for coverage
+opt-level = 0
+debug = true
+
+[lints.rust]
+# Deny all unsafe code
+unsafe_code = "forbid"
+# Missing docs is an error
+missing_docs = "warn"
+# Require documentation for public items
+missing_debug_implementations = "warn"
+# Unused results must be handled
+unused_must_use = "warn"
+# Unused imports/variables
+unused = { level = "warn", priority = -1 }
+# Dead code
+dead_code = "warn"
+
+[lints.clippy]
+# Pedantic lints for high quality code (warn, not deny)
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Critical lints - these catch real bugs
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"
+unimplemented = "warn"
+dbg_macro = "warn"
+
+# Allow common patterns that are safe in context
+implicit_return = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+redundant_pub_crate = "allow"
+significant_drop_tightening = "allow"
+struct_excessive_bools = "allow"
+doc_markdown = "allow"
+
+# These are too strict for practical use
+missing_inline_in_public_items = "allow"
+exhaustive_enums = "allow"
+exhaustive_structs = "allow"
+pattern_type_mismatch = "allow"
+shadow_reuse = "allow"
+shadow_same = "allow"
+shadow_unrelated = "allow"
+default_numeric_fallback = "allow"
+arithmetic_side_effects = "allow"
+integer_division = "allow"
+modulo_arithmetic = "allow"
+as_conversions = "allow"
+indexing_slicing = "allow"
+string_slice = "allow"
+float_arithmetic = "allow"
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+semicolon_outside_block = "allow"
+str_to_string = "allow"
+string_add = "allow"
+print_stdout = "allow"
+print_stderr = "allow"
+similar_names = "allow"
+struct_field_names = "allow"
+too_many_lines = "allow"
+cognitive_complexity = "allow"
+missing_const_for_fn = "allow"
+match_same_arms = "allow"
+unnested_or_patterns = "allow"
+single_char_pattern = "allow"
+use_self = "allow"
+trivially_copy_pass_by_ref = "allow"
+map_unwrap_or = "allow"
+redundant_clone = "allow"
+format_push_string = "allow"
+option_if_let_else = "allow"
+unused_peekable = "allow"
+should_implement_trait = "allow"
+unnecessary_map_or = "allow"
+uninlined_format_args = "allow"
+iter_without_into_iter = "allow"
+range_plus_one = "allow"

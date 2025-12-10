@@ -1,0 +1,9 @@
+# Python Rich library for comparison testing
+rich>=14.0.0
+
+# Testing framework
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+# JSON handling for test data exchange
+# (built-in, no package needed)
