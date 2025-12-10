@@ -381,4 +381,3 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - [Textualize](https://github.com/Textualize) for the original [Rich](https://github.com/Textualize/rich) library
 - The Rust community for excellent terminal libraries
-- All contributors to this project
