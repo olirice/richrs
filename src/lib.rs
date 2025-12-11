@@ -25,8 +25,8 @@
 //!
 //! ## Compatibility
 //!
-//! This library aims for pixel-perfect compatibility with Python Rich output.
-//! All options available in Python Rich should be available in `richrs`.
+//! This library provides compatible markup syntax and styling with Python Rich.
+//! The API is designed to feel Rust-native while supporting the same features.
 
 #![doc(html_root_url = "https://docs.rs/richrs/0.1.0")]
 

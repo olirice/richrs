@@ -6,6 +6,7 @@ A Rust port of the [Rich](https://github.com/Textualize/rich) Python library for
 [![Documentation](https://docs.rs/richrs/badge.svg)](https://docs.rs/richrs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
+[![codecov](https://codecov.io/gh/olirice/richrs/graph/badge.svg)](https://codecov.io/gh/olirice/richrs)
 
 <p align="center">
   <img src="assets/demo.gif" alt="richrs demo" width="900">
@@ -13,7 +14,7 @@ A Rust port of the [Rich](https://github.com/Textualize/rich) Python library for
 
 ## Overview
 
-**richrs** brings the power of Python's Rich library to Rust, providing beautiful terminal output with colors, styles, tables, progress bars, and more. The API is designed to feel Rust-native while maintaining pixel-perfect compatibility with Python Rich output.
+**richrs** brings the power of Python's Rich library to Rust, providing beautiful terminal output with colors, styles, tables, progress bars, and more. The API is designed to feel Rust-native while providing compatible markup syntax and styling.
 
 ```rust
 use richrs::prelude::*;
