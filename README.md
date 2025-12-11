@@ -47,12 +47,9 @@ fn main() -> Result<()> {
 | **Live** | Real-time content updates in place |
 | **Syntax** | Syntax highlighting for 100+ languages (optional feature) |
 | **Markdown** | Markdown rendering (optional feature) |
-| **Logging** | Styled log handler with levels and timestamps |
 | **Pretty** | Pretty-printing for data structures |
-| **Traceback** | Formatted error tracebacks with context |
 | **Highlighter** | Automatic pattern highlighting (URLs, numbers, UUIDs, etc.) |
 | **Emoji** | 670+ emoji name-to-character mappings |
-| **Theme** | Named style collections for consistent theming |
 
 ## Installation
 

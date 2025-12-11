@@ -40,7 +40,6 @@ pub mod emoji;
 pub mod errors;
 pub mod highlighter;
 pub mod live;
-pub mod logging;
 pub mod markdown;
 pub mod markup;
 pub mod measure;
@@ -58,8 +57,6 @@ pub mod style;
 pub mod syntax;
 pub mod table;
 pub mod text;
-pub mod theme;
-pub mod traceback;
 pub mod tree;
 
 /// Prelude module for convenient imports.
@@ -81,7 +78,6 @@ pub mod prelude {
         Highlighter, ISOHighlighter, JSONHighlighter, RegexHighlighter, ReprHighlighter,
     };
     pub use crate::live::Live;
-    pub use crate::logging::{LogLevel, RichHandler};
     pub use crate::markdown::Markdown;
     pub use crate::markup::Markup;
     pub use crate::panel::Panel;
@@ -96,7 +92,5 @@ pub mod prelude {
     pub use crate::syntax::Syntax;
     pub use crate::table::{Column, Table};
     pub use crate::text::Text;
-    pub use crate::theme::Theme;
-    pub use crate::traceback::{Frame, Traceback, format_error_chain};
     pub use crate::tree::{Tree, TreeNode};
 }
