@@ -563,6 +563,13 @@ mod tests {
     fn test_prompt_new() {
         let prompt = Prompt::new("Test?");
         assert_eq!(prompt.message, "Test?");
+        assert!(prompt.default.is_none());
+        assert!(prompt.choices.is_none());
+        assert!(prompt.case_sensitive);
+        assert!(prompt.show_default);
+        assert!(prompt.show_choices);
+        assert!(!prompt.password);
+        assert!(prompt.prompt_style.is_none());
     }
 
     #[test]
@@ -579,10 +586,42 @@ mod tests {
     }
 
     #[test]
+    fn test_prompt_case_sensitive() {
+        let prompt = Prompt::new("Test?").case_sensitive(false);
+        assert!(!prompt.case_sensitive);
+    }
+
+    #[test]
+    fn test_prompt_show_default() {
+        let prompt = Prompt::new("Test?").show_default(false);
+        assert!(!prompt.show_default);
+    }
+
+    #[test]
+    fn test_prompt_show_choices() {
+        let prompt = Prompt::new("Test?").show_choices(false);
+        assert!(!prompt.show_choices);
+    }
+
+    #[test]
+    fn test_prompt_password() {
+        let prompt = Prompt::new("Password?").password(true);
+        assert!(prompt.password);
+    }
+
+    #[test]
+    fn test_prompt_style() {
+        let prompt = Prompt::new("Test?").style(Style::new().bold());
+        assert!(prompt.prompt_style.is_some());
+    }
+
+    #[test]
     fn test_prompt_validate_with_choices() {
         let prompt = Prompt::new("Test?").choices(["yes", "no"]);
         assert!(prompt.validate("yes"));
+        assert!(prompt.validate("no"));
         assert!(!prompt.validate("maybe"));
+        assert!(!prompt.validate("YES")); // case sensitive by default
     }
 
     #[test]
@@ -592,6 +631,16 @@ mod tests {
             .case_sensitive(false);
         assert!(prompt.validate("YES"));
         assert!(prompt.validate("Yes"));
+        assert!(prompt.validate("yes"));
+        assert!(prompt.validate("NO"));
+        assert!(!prompt.validate("maybe"));
+    }
+
+    #[test]
+    fn test_prompt_validate_no_choices() {
+        let prompt = Prompt::new("Test?");
+        assert!(prompt.validate("anything"));
+        assert!(prompt.validate(""));
     }
 
     #[test]
@@ -601,24 +650,76 @@ mod tests {
         assert!(built.contains("Choose"));
         assert!(built.contains("[a/b]"));
         assert!(built.contains("(a)"));
+        assert!(built.ends_with(": "));
+    }
+
+    #[test]
+    fn test_prompt_build_prompt_no_choices() {
+        let prompt = Prompt::new("Name").default("John");
+        let built = prompt.build_prompt();
+        assert!(built.contains("Name"));
+        assert!(built.contains("(John)"));
+        assert!(!built.contains("["));
+    }
+
+    #[test]
+    fn test_prompt_build_prompt_hide_default() {
+        let prompt = Prompt::new("Name").default("John").show_default(false);
+        let built = prompt.build_prompt();
+        assert!(built.contains("Name"));
+        assert!(!built.contains("(John)"));
+    }
+
+    #[test]
+    fn test_prompt_build_prompt_hide_choices() {
+        let prompt = Prompt::new("Choose")
+            .choices(["a", "b"])
+            .show_choices(false);
+        let built = prompt.build_prompt();
+        assert!(built.contains("Choose"));
+        assert!(!built.contains("[a/b]"));
     }
 
     #[test]
     fn test_confirm_new() {
         let confirm = Confirm::new("Sure?");
         assert_eq!(confirm.message, "Sure?");
+        assert!(confirm.default.is_none());
+        assert!(confirm.prompt_style.is_none());
     }
 
     #[test]
-    fn test_confirm_default() {
+    fn test_confirm_default_true() {
         let confirm = Confirm::new("Sure?").default(true);
         assert_eq!(confirm.default, Some(true));
+    }
+
+    #[test]
+    fn test_confirm_default_false() {
+        let confirm = Confirm::new("Sure?").default(false);
+        assert_eq!(confirm.default, Some(false));
+    }
+
+    #[test]
+    fn test_confirm_style() {
+        let confirm = Confirm::new("Sure?").style(Style::new().bold());
+        assert!(confirm.prompt_style.is_some());
     }
 
     #[test]
     fn test_int_prompt_new() {
         let prompt = IntPrompt::new("Number?");
         assert_eq!(prompt.message, "Number?");
+        assert!(prompt.default.is_none());
+        assert!(prompt.min.is_none());
+        assert!(prompt.max.is_none());
+        assert!(prompt.prompt_style.is_none());
+    }
+
+    #[test]
+    fn test_int_prompt_default() {
+        let prompt = IntPrompt::new("Number?").default(42);
+        assert_eq!(prompt.default, Some(42));
     }
 
     #[test]
@@ -629,8 +730,37 @@ mod tests {
     }
 
     #[test]
+    fn test_int_prompt_style() {
+        let prompt = IntPrompt::new("Number?").style(Style::new().bold());
+        assert!(prompt.prompt_style.is_some());
+    }
+
+    #[test]
     fn test_float_prompt_new() {
         let prompt = FloatPrompt::new("Value?");
         assert_eq!(prompt.message, "Value?");
+        assert!(prompt.default.is_none());
+        assert!(prompt.min.is_none());
+        assert!(prompt.max.is_none());
+        assert!(prompt.prompt_style.is_none());
+    }
+
+    #[test]
+    fn test_float_prompt_default() {
+        let prompt = FloatPrompt::new("Value?").default(42.5);
+        assert_eq!(prompt.default, Some(42.5));
+    }
+
+    #[test]
+    fn test_float_prompt_range() {
+        let prompt = FloatPrompt::new("Value?").min(0.0).max(1.0);
+        assert_eq!(prompt.min, Some(0.0));
+        assert_eq!(prompt.max, Some(1.0));
+    }
+
+    #[test]
+    fn test_float_prompt_style() {
+        let prompt = FloatPrompt::new("Value?").style(Style::new().bold());
+        assert!(prompt.prompt_style.is_some());
     }
 }

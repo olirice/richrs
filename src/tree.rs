@@ -375,11 +375,13 @@ impl Measurable for Tree {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_tree_new() {
         let tree = Tree::new("Root");
         assert!(!tree.hide_root);
+        assert!(tree.guide_style.is_none());
     }
 
     #[test]
@@ -421,11 +423,67 @@ mod tests {
     }
 
     #[test]
+    fn test_tree_guides_unicode() {
+        let tree = Tree::new("Root").guides(TreeGuides::UNICODE);
+        assert_eq!(tree.guides.branch, "├──");
+    }
+
+    #[test]
     fn test_tree_node_builder() {
         let style = Style::new().bold();
         let node = TreeNode::new("Label").style(style.clone()).expanded(false);
         assert!(node.style.is_some());
         assert!(!node.expanded);
+    }
+
+    #[test]
+    fn test_tree_node_expanded_default() {
+        let node = TreeNode::new("Label");
+        assert!(node.expanded); // Default is true
+    }
+
+    #[test]
+    fn test_tree_node_add_child() {
+        let mut node = TreeNode::new("Parent");
+        node.add_child(TreeNode::new("Child 1"));
+        node.add_child(TreeNode::new("Child 2"));
+        assert_eq!(node.children.len(), 2);
+    }
+
+    #[test]
+    fn test_tree_node_with_child() {
+        let node = TreeNode::new("Parent")
+            .with_child(TreeNode::new("Child 1"))
+            .with_child(TreeNode::new("Child 2"));
+        assert_eq!(node.children.len(), 2);
+    }
+
+    #[test]
+    fn test_tree_node_label() {
+        let node = TreeNode::new("My Label");
+        assert_eq!(node.label().plain(), "My Label");
+    }
+
+    #[test]
+    fn test_tree_node_children() {
+        let node = TreeNode::new("Parent").with_child(TreeNode::new("Child"));
+        assert_eq!(node.children().len(), 1);
+    }
+
+    #[test]
+    fn test_tree_node_has_children() {
+        let node1 = TreeNode::new("Empty");
+        assert!(!node1.has_children());
+
+        let node2 = TreeNode::new("Parent").with_child(TreeNode::new("Child"));
+        assert!(node2.has_children());
+    }
+
+    #[test]
+    fn test_tree_node_guide_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Blue));
+        let node = TreeNode::new("Label").guide_style(style);
+        assert!(node.guide_style.is_some());
     }
 
     #[test]
@@ -436,6 +494,128 @@ mod tests {
     }
 
     #[test]
+    fn test_tree_guide_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Green));
+        let tree = Tree::new("Root").guide_style(style);
+        assert!(tree.guide_style.is_some());
+    }
+
+    #[test]
+    fn test_tree_hide_root() {
+        let tree = Tree::new("Root").hide_root(true);
+        assert!(tree.hide_root);
+    }
+
+    #[test]
+    fn test_tree_hide_root_render() {
+        let mut tree = Tree::new("Root").hide_root(true);
+        tree.add(TreeNode::new("Child"));
+
+        let segments = tree.render();
+        let text = segments.plain_text();
+        // Root should not appear when hidden
+        assert!(!text.contains("Root"));
+        assert!(text.contains("Child"));
+    }
+
+    #[test]
+    fn test_tree_root_mut() {
+        let mut tree = Tree::new("Root");
+        tree.root_mut().add_child(TreeNode::new("Child"));
+        assert_eq!(tree.root.children.len(), 1);
+    }
+
+    #[test]
+    fn test_tree_render_with_guide_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Red));
+        let mut tree = Tree::new("Root").guide_style(style);
+        tree.add(TreeNode::new("Child"));
+
+        let segments = tree.render();
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_tree_render_with_node_style() {
+        let style = Style::new().bold();
+        let mut tree = Tree::new("Root");
+        tree.add(TreeNode::new("Child").style(style));
+
+        let segments = tree.render();
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_tree_render_collapsed_node() {
+        let mut tree = Tree::new("Root");
+        let child = TreeNode::new("Child")
+            .expanded(false)
+            .with_child(TreeNode::new("Grandchild"));
+        tree.add(child);
+
+        let segments = tree.render();
+        let text = segments.plain_text();
+        // Grandchild should not appear when parent is collapsed
+        assert!(!text.contains("Grandchild"));
+    }
+
+    #[test]
+    fn test_tree_render_deep_nesting() {
+        let mut tree = Tree::new("Root");
+        let level1 = TreeNode::new("Level 1")
+            .with_child(TreeNode::new("Level 2").with_child(TreeNode::new("Level 3")));
+        tree.add(level1);
+
+        let segments = tree.render();
+        let text = segments.plain_text();
+        assert!(text.contains("Level 1"));
+        assert!(text.contains("Level 2"));
+        assert!(text.contains("Level 3"));
+    }
+
+    #[test]
+    fn test_tree_render_multiple_branches() {
+        let mut tree = Tree::new("Root");
+        tree.add(TreeNode::new("Branch 1").with_child(TreeNode::new("Leaf 1")));
+        tree.add(TreeNode::new("Branch 2").with_child(TreeNode::new("Leaf 2")));
+        tree.add(TreeNode::new("Branch 3").with_child(TreeNode::new("Leaf 3")));
+
+        let segments = tree.render();
+        let text = segments.plain_text();
+        assert!(text.contains("Branch 1"));
+        assert!(text.contains("Branch 2"));
+        assert!(text.contains("Branch 3"));
+    }
+
+    #[test]
+    fn test_tree_node_from_str() {
+        let node: TreeNode = "Test".into();
+        assert_eq!(node.label().plain(), "Test");
+    }
+
+    #[test]
+    fn test_tree_node_from_string() {
+        let node: TreeNode = String::from("Test").into();
+        assert_eq!(node.label().plain(), "Test");
+    }
+
+    #[test]
+    fn test_tree_guides_default() {
+        let guides = TreeGuides::default();
+        assert_eq!(guides.branch, "├──");
+    }
+
+    #[test]
+    fn test_tree_render_ascii() {
+        let mut tree = Tree::new("Root").guides(TreeGuides::ASCII);
+        tree.add(TreeNode::new("Child"));
+
+        let segments = tree.render();
+        let text = segments.plain_text();
+        assert!(text.contains("+--"));
+    }
+
+    #[test]
     fn test_tree_measure() {
         let mut tree = Tree::new("Root");
         tree.add(TreeNode::new("Child"));
@@ -443,5 +623,34 @@ mod tests {
         let options = MeasureOptions::new(80);
         let measurement = tree.measure(&options).ok().unwrap_or_default();
         assert!(measurement.minimum > 0);
+    }
+
+    #[test]
+    fn test_tree_measure_nested() {
+        let mut tree = Tree::new("Root");
+        tree.add(TreeNode::new("Child").with_child(TreeNode::new("Very Long Grandchild Label")));
+
+        let options = MeasureOptions::new(80);
+        let measurement = tree.measure(&options).ok().unwrap_or_default();
+        assert!(measurement.minimum > 0);
+    }
+
+    #[test]
+    fn test_tree_empty() {
+        let tree = Tree::new("Root");
+        let segments = tree.render();
+        let text = segments.plain_text();
+        assert!(text.contains("Root"));
+    }
+
+    #[test]
+    fn test_tree_render_with_root_style() {
+        let style = Style::new().italic();
+        let mut tree = Tree::new("Root");
+        tree.root_mut().style = Some(style);
+        tree.add(TreeNode::new("Child"));
+
+        let segments = tree.render();
+        assert!(!segments.is_empty());
     }
 }

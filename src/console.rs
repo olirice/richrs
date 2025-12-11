@@ -910,6 +910,7 @@ fn color_to_css(color: &crate::color::Color) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_console_new() {
@@ -932,9 +933,6 @@ mod tests {
 
         console.write("hello").ok();
         console.flush().ok();
-
-        // Can't easily access the writer's contents through Console
-        // This is mainly testing that write doesn't error
     }
 
     #[test]
@@ -969,6 +967,32 @@ mod tests {
     }
 
     #[test]
+    fn test_console_options_default() {
+        let opts = ConsoleOptions::default();
+        assert_eq!(opts.max_width, 80);
+        assert_eq!(opts.min_width, 1);
+        assert_eq!(opts.justify, Justify::Default);
+        assert_eq!(opts.overflow, Overflow::Fold);
+        assert!(!opts.no_wrap);
+        assert!(!opts.highlight);
+        assert!(opts.markup);
+        assert!(opts.emoji);
+    }
+
+    #[test]
+    fn test_console_options_with_overflow() {
+        let opts = ConsoleOptions::new(80).with_overflow(Overflow::Ellipsis);
+        assert_eq!(opts.overflow, Overflow::Ellipsis);
+    }
+
+    #[test]
+    fn test_console_options_no_wrap_field() {
+        let mut opts = ConsoleOptions::new(80);
+        opts.no_wrap = true;
+        assert!(opts.no_wrap);
+    }
+
+    #[test]
     fn test_terminal_size() {
         let size = TerminalSize::new(80, 24);
         assert_eq!(size.width, 80);
@@ -976,11 +1000,35 @@ mod tests {
     }
 
     #[test]
+    fn test_terminal_size_default() {
+        let size = TerminalSize::default();
+        // Default-derived implementation initializes to 0
+        assert_eq!(size.width, 0);
+        assert_eq!(size.height, 0);
+    }
+
+    #[test]
     fn test_color_system() {
         assert!(!ColorSystem::None.has_colors());
         assert!(ColorSystem::Standard.has_colors());
+        assert!(ColorSystem::EightBit.has_colors());
+        assert!(ColorSystem::Windows.has_colors());
         assert!(ColorSystem::TrueColor.is_true_color());
         assert!(!ColorSystem::EightBit.is_true_color());
+        assert!(!ColorSystem::Standard.is_true_color());
+        assert!(!ColorSystem::None.is_true_color());
+    }
+
+    #[test]
+    fn test_color_system_default() {
+        let cs = ColorSystem::default();
+        assert_eq!(cs, ColorSystem::TrueColor);
+    }
+
+    #[test]
+    fn test_record_mode_default() {
+        let mode = RecordMode::default();
+        assert_eq!(mode, RecordMode::Off);
     }
 
     #[test]
@@ -995,10 +1043,18 @@ mod tests {
     }
 
     #[test]
+    fn test_string_writer_flush() {
+        let mut writer = StringWriter::new();
+        writer.write_str("test").ok();
+        assert!(writer.flush().is_ok());
+    }
+
+    #[test]
     fn test_html_escape() {
         assert_eq!(html_escape("<script>"), "&lt;script&gt;");
         assert_eq!(html_escape("a & b"), "a &amp; b");
         assert_eq!(html_escape("\"quoted\""), "&quot;quoted&quot;");
+        assert_eq!(html_escape("'single'"), "&#39;single&#39;");
     }
 
     #[test]
@@ -1020,18 +1076,295 @@ mod tests {
         let mut console = Console::with_writer(writer);
 
         console.begin_recording();
-        console.write_segment(&Segment::new("hello")).ok();
-        console.write_segment(&Segment::new(" world")).ok();
-        let _ = console.end_recording();
-
-        // The recording was already ended, so export_text won't have data
-        // Let's test with active recording
-        let writer2 = StringWriter::new();
-        let mut console2 = Console::with_writer(writer2);
-
-        console2.begin_recording();
-        console2.write_segment(&Segment::new("test")).ok();
-        let text = console2.export_text().ok().unwrap_or_default();
+        console.write_segment(&Segment::new("test")).ok();
+        let text = console.export_text().ok().unwrap_or_default();
         assert_eq!(text, "test");
+    }
+
+    #[test]
+    fn test_export_html() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.begin_recording();
+        console.write_segment(&Segment::new("plain")).ok();
+        let styled = Segment::styled("bold", Style::new().bold());
+        console.write_segment(&styled).ok();
+        let html = console.export_html().ok().unwrap_or_default();
+
+        assert!(html.contains("<pre><code>"));
+        assert!(html.contains("plain"));
+        assert!(html.contains("</code></pre>"));
+    }
+
+    #[test]
+    fn test_console_print() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.print("[bold]Hello[/]").ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Hello"));
+    }
+
+    #[test]
+    fn test_console_print_styled() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.print_styled("Hello", &Style::new().bold()).ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Hello"));
+    }
+
+    #[test]
+    fn test_console_print_text() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        let text = Text::from_str("Hello World");
+        console.print_text(&text).ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Hello World"));
+    }
+
+    #[test]
+    fn test_console_out() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.out("raw text").ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("raw text"));
+    }
+
+    #[test]
+    fn test_console_log() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.log("log message").ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("[LOG]"));
+        assert!(captured.contains("log message"));
+    }
+
+    #[test]
+    fn test_console_rule() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.set_width(40);
+        console.begin_capture();
+
+        console.rule(None).ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("─"));
+    }
+
+    #[test]
+    fn test_console_rule_with_title() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.set_width(40);
+        console.begin_capture();
+
+        console.rule(Some("Title")).ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Title"));
+        assert!(captured.contains("─"));
+    }
+
+    #[test]
+    fn test_console_clear() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.clear().ok();
+        let captured = console.end_capture();
+
+        // Should contain ANSI clear and home sequences
+        assert!(captured.contains("\x1b["));
+    }
+
+    #[test]
+    fn test_console_show_hide_cursor() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.hide_cursor().ok();
+        console.show_cursor().ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("\x1b["));
+    }
+
+    #[test]
+    fn test_console_write_segments() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        let mut segments = Segments::new();
+        segments.push(Segment::new("Hello "));
+        segments.push(Segment::new("World"));
+
+        console.write_segments(&segments).ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Hello "));
+        assert!(captured.contains("World"));
+    }
+
+    #[test]
+    fn test_console_set_color_system() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.set_color_system(ColorSystem::None);
+        assert_eq!(console.color_system(), ColorSystem::None);
+
+        console.set_color_system(ColorSystem::TrueColor);
+        assert_eq!(console.color_system(), ColorSystem::TrueColor);
+    }
+
+    #[test]
+    fn test_console_force_terminal() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.set_force_terminal(true);
+        assert!(console.is_terminal());
+
+        console.set_force_terminal(false);
+    }
+
+    #[test]
+    fn test_console_set_style() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        assert!(console.style().is_none());
+
+        console.set_style(Some(Style::new().bold()));
+        assert!(console.style().is_some());
+
+        console.set_style(None);
+        assert!(console.style().is_none());
+    }
+
+    #[test]
+    fn test_console_options_mut() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.options_mut().max_width = 120;
+        assert_eq!(console.options().max_width, 120);
+    }
+
+    #[test]
+    fn test_style_to_css() {
+        let style = Style::new()
+            .bold()
+            .italic()
+            .underline()
+            .strike()
+            .with_color(Color::Standard(StandardColor::Red))
+            .with_bgcolor(Color::Standard(StandardColor::White));
+
+        let css = style_to_css(&style);
+        assert!(css.contains("font-weight: bold"));
+        assert!(css.contains("font-style: italic"));
+        assert!(
+            css.contains("text-decoration: underline")
+                || css.contains("text-decoration: line-through")
+        );
+        assert!(css.contains("color:"));
+        assert!(css.contains("background-color:"));
+    }
+
+    #[test]
+    fn test_color_to_css() {
+        assert_eq!(color_to_css(&Color::Default), "inherit");
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Red)),
+            "#cc0000"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Green)),
+            "#00cc00"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Blue)),
+            "#0000cc"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Black)),
+            "#000000"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::White)),
+            "#cccccc"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightRed)),
+            "#ff0000"
+        );
+        assert_eq!(color_to_css(&Color::Palette(42)), "var(--palette-42)");
+        assert_eq!(
+            color_to_css(&Color::Rgb {
+                r: 255,
+                g: 128,
+                b: 0
+            }),
+            "rgb(255, 128, 0)"
+        );
+    }
+
+    #[test]
+    fn test_console_write_segment_no_color() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.set_color_system(ColorSystem::None);
+        console.begin_capture();
+
+        let styled = Segment::styled("text", Style::new().bold());
+        console.write_segment(&styled).ok();
+        let captured = console.end_capture();
+
+        // With no color system, should output plain text without ANSI codes
+        assert_eq!(captured, "text");
+    }
+
+    #[test]
+    fn test_console_print_with_options_no_markup() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        let opts = ConsoleOptions::new(80);
+        let mut opts_no_markup = opts;
+        opts_no_markup.markup = false;
+
+        console
+            .print_with_options("[bold]Hello[/]", &opts_no_markup)
+            .ok();
+        let captured = console.end_capture();
+
+        // Should contain literal brackets since markup is disabled
+        assert!(captured.contains("[bold]"));
     }
 }

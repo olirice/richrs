@@ -958,12 +958,16 @@ impl Measurable for Table {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_table_new() {
         let table = Table::new();
         assert_eq!(table.column_count(), 0);
         assert_eq!(table.row_count(), 0);
+        assert!(table.show_header);
+        assert!(table.show_edge);
+        assert!(table.box_chars.is_some());
     }
 
     #[test]
@@ -985,6 +989,16 @@ mod tests {
     }
 
     #[test]
+    fn test_table_add_row_object() {
+        let mut table = Table::new();
+        table.add_column(Column::new("A"));
+        table.add_column(Column::new("B"));
+        let row = Row::new(["x", "y"]);
+        table.add_row(row);
+        assert_eq!(table.row_count(), 1);
+    }
+
+    #[test]
     fn test_table_render() {
         let mut table = Table::new();
         table.add_column(Column::new("Name"));
@@ -997,6 +1011,13 @@ mod tests {
         assert!(text.contains("Value"));
         assert!(text.contains("Alice"));
         assert!(text.contains("100"));
+    }
+
+    #[test]
+    fn test_table_render_empty() {
+        let table = Table::new();
+        let segments = table.render(80);
+        assert!(segments.is_empty());
     }
 
     #[test]
@@ -1021,6 +1042,33 @@ mod tests {
     }
 
     #[test]
+    fn test_column_style() {
+        let style = Style::new().bold();
+        let col = Column::new("Test").style(style);
+        assert!(col.style.is_some());
+    }
+
+    #[test]
+    fn test_column_header_style() {
+        let style = Style::new().italic();
+        let col = Column::new("Test").header_style(style);
+        assert!(col.header_style.is_some());
+    }
+
+    #[test]
+    fn test_column_min_max_width() {
+        let col = Column::new("Test").min_width(5).max_width(50);
+        assert_eq!(col.min_width, Some(5));
+        assert_eq!(col.max_width, Some(50));
+    }
+
+    #[test]
+    fn test_column_ratio() {
+        let col = Column::new("Test").ratio(2.0);
+        assert_eq!(col.ratio, Some(2.0));
+    }
+
+    #[test]
     fn test_row_builder() {
         let style = Style::new().bold();
         let row = Row::new(["a", "b", "c"]).style(style.clone());
@@ -1029,10 +1077,198 @@ mod tests {
     }
 
     #[test]
+    fn test_row_end_section_field() {
+        let mut row = Row::new(["a"]);
+        row.end_section = true;
+        assert!(row.end_section);
+    }
+
+    #[test]
     fn test_table_safe_box() {
         let table = Table::new().safe_box(true);
         assert!(table.safe_box);
         assert_eq!(table.box_chars, Some(BoxChars::ASCII));
+    }
+
+    #[test]
+    fn test_table_safe_box_false() {
+        let table = Table::new().safe_box(false);
+        assert!(!table.safe_box);
+    }
+
+    #[test]
+    fn test_table_show_header() {
+        let table = Table::new().show_header(false);
+        assert!(!table.show_header);
+    }
+
+    #[test]
+    fn test_table_show_edge() {
+        let table = Table::new().show_edge(false);
+        assert!(!table.show_edge);
+    }
+
+    #[test]
+    fn test_table_header_style() {
+        let style = Style::new().bold();
+        let table = Table::new().header_style(style);
+        assert!(table.header_style.is_some());
+    }
+
+    #[test]
+    fn test_table_border_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Blue));
+        let table = Table::new().border_style(style);
+        assert!(table.border_style.is_some());
+    }
+
+    #[test]
+    fn test_table_title() {
+        let table = Table::new().title("My Table");
+        assert!(table.title.is_some());
+    }
+
+    #[test]
+    fn test_table_caption() {
+        let table = Table::new().caption("Table caption");
+        assert!(table.caption.is_some());
+    }
+
+    #[test]
+    fn test_table_expand() {
+        let table = Table::new().expand(true);
+        assert!(table.expand);
+    }
+
+    #[test]
+    fn test_table_padding() {
+        let table = Table::new().padding(2, 1);
+        assert_eq!(table.padding, (2, 1));
+    }
+
+    #[test]
+    fn test_table_box_chars() {
+        let table = Table::new().box_chars(Some(BoxChars::ASCII));
+        assert_eq!(table.box_chars, Some(BoxChars::ASCII));
+    }
+
+    #[test]
+    fn test_table_render_with_title() {
+        let mut table = Table::new().title("Title");
+        table.add_column(Column::new("A"));
+        table.add_row_cells(["x"]);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_table_render_with_caption() {
+        let mut table = Table::new().caption("Caption");
+        table.add_column(Column::new("A"));
+        table.add_row_cells(["x"]);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Caption"));
+    }
+
+    #[test]
+    fn test_table_render_no_edge() {
+        let mut table = Table::new().show_edge(false);
+        table.add_column(Column::new("A"));
+        table.add_row_cells(["x"]);
+
+        let segments = table.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_table_render_no_header() {
+        let mut table = Table::new().show_header(false);
+        table.add_column(Column::new("Header"));
+        table.add_row_cells(["data"]);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("data"));
+    }
+
+    #[test]
+    fn test_table_render_with_border_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Red));
+        let mut table = Table::new().border_style(style);
+        table.add_column(Column::new("A"));
+        table.add_row_cells(["x"]);
+
+        let segments = table.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_table_render_multiple_rows() {
+        let mut table = Table::new();
+        table.add_column(Column::new("Name"));
+        table.add_column(Column::new("Value"));
+        table.add_row_cells(["A", "1"]);
+        table.add_row_cells(["B", "2"]);
+        table.add_row_cells(["C", "3"]);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("A"));
+        assert!(text.contains("B"));
+        assert!(text.contains("C"));
+    }
+
+    #[test]
+    fn test_table_render_with_row_style() {
+        let mut table = Table::new();
+        table.add_column(Column::new("A"));
+        let styled_row = Row::new(["styled"]).style(Style::new().bold());
+        table.add_row(styled_row);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("styled"));
+    }
+
+    #[test]
+    fn test_table_render_with_column_style() {
+        let mut table = Table::new();
+        let col = Column::new("Styled").style(Style::new().italic());
+        table.add_column(col);
+        table.add_row_cells(["data"]);
+
+        let segments = table.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_table_render_grid() {
+        let mut table = Table::grid();
+        table.add_column(Column::new("A"));
+        table.add_column(Column::new("B"));
+        table.add_row_cells(["x", "y"]);
+
+        let segments = table.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("x"));
+        assert!(text.contains("y"));
+    }
+
+    #[test]
+    fn test_table_render_with_section() {
+        let mut table = Table::new();
+        table.add_column(Column::new("A"));
+        let mut row = Row::new(["first"]);
+        row.end_section = true;
+        table.add_row(row);
+        table.add_row_cells(["second"]);
+
+        let segments = table.render(40);
+        assert!(!segments.is_empty());
     }
 
     #[test]
@@ -1044,5 +1280,21 @@ mod tests {
         let options = MeasureOptions::new(80);
         let measurement = table.measure(&options).ok().unwrap_or_default();
         assert!(measurement.minimum > 0);
+    }
+
+    #[test]
+    fn test_table_render_narrow() {
+        let mut table = Table::new();
+        table.add_column(Column::new("A"));
+        table.add_row_cells(["x"]);
+
+        let segments = table.render(10);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_column_without_header() {
+        let col = Column::empty();
+        assert!(col.header.is_none());
     }
 }

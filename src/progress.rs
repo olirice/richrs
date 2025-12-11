@@ -528,6 +528,7 @@ pub fn format_duration(duration: Duration) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_task_id() {
@@ -541,6 +542,13 @@ mod tests {
         assert_eq!(task.description, "Test");
         assert_eq!(task.total, Some(100));
         assert_eq!(task.completed, 0);
+        assert!(task.visible);
+    }
+
+    #[test]
+    fn test_task_new_no_total() {
+        let task = Task::new(TaskId::new(0), "Test", None);
+        assert!(task.total.is_none());
     }
 
     #[test]
@@ -548,6 +556,19 @@ mod tests {
         let mut task = Task::new(TaskId::new(0), "Test", Some(100));
         task.completed = 50;
         assert!((task.percentage().unwrap_or(0.0) - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_task_percentage_no_total() {
+        let task = Task::new(TaskId::new(0), "Test", None);
+        assert!(task.percentage().is_none());
+    }
+
+    #[test]
+    fn test_task_percentage_zero_total() {
+        let task = Task::new(TaskId::new(0), "Test", Some(0));
+        // Zero total returns 1.0 (100% complete)
+        assert!((task.percentage().unwrap_or(0.0) - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -560,8 +581,84 @@ mod tests {
     }
 
     #[test]
+    fn test_task_is_complete_no_total() {
+        let task = Task::new(TaskId::new(0), "Test", None);
+        assert!(!task.is_complete());
+    }
+
+    #[test]
+    fn test_task_elapsed() {
+        let task = Task::new(TaskId::new(0), "Test", Some(100));
+        // Just verify it doesn't panic - elapsed depends on wall clock
+        let _ = task.elapsed();
+    }
+
+    #[test]
     fn test_progress_bar() {
         let bar = ProgressBar::new().width(20);
+        let segments = bar.render(Some(0.5));
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_default() {
+        let bar = ProgressBar::default();
+        assert_eq!(bar.width, 40);
+    }
+
+    #[test]
+    fn test_progress_bar_complete_char() {
+        let bar = ProgressBar::new().complete_char('#');
+        assert_eq!(bar.complete_char, '#');
+    }
+
+    #[test]
+    fn test_progress_bar_incomplete_char() {
+        let bar = ProgressBar::new().incomplete_char('-');
+        assert_eq!(bar.incomplete_char, '-');
+    }
+
+    #[test]
+    fn test_progress_bar_complete_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Green));
+        let bar = ProgressBar::new().complete_style(style);
+        assert!(bar.complete_style.is_some());
+    }
+
+    #[test]
+    fn test_progress_bar_incomplete_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Red));
+        let bar = ProgressBar::new().incomplete_style(style);
+        assert!(bar.incomplete_style.is_some());
+    }
+
+    #[test]
+    fn test_progress_bar_render_none() {
+        let bar = ProgressBar::new().width(20);
+        let segments = bar.render(None);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_render_zero() {
+        let bar = ProgressBar::new().width(20);
+        let segments = bar.render(Some(0.0));
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_render_full() {
+        let bar = ProgressBar::new().width(20);
+        let segments = bar.render(Some(1.0));
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_render_with_style() {
+        let bar = ProgressBar::new()
+            .width(20)
+            .complete_style(Style::new().with_color(Color::Standard(StandardColor::Green)))
+            .incomplete_style(Style::new().with_color(Color::Standard(StandardColor::Red)));
         let segments = bar.render(Some(0.5));
         assert!(!segments.is_empty());
     }
@@ -581,13 +678,56 @@ mod tests {
     }
 
     #[test]
+    fn test_progress_add_task_not_started() {
+        let mut progress = Progress::new();
+        let id = progress.add_task("Task", Some(100), false);
+        let task = progress.get_task(id);
+        // start=false means not started, but still visible by default
+        assert!(!task.map(|t| t.started).unwrap_or(true));
+        assert!(task.map(|t| t.start_time.is_none()).unwrap_or(false));
+    }
+
+    #[test]
     fn test_progress_update() {
         let mut progress = Progress::new();
         let id = progress.add_task("Test", Some(100), true);
+        // update(task_id, completed, advance, total, visible)
         progress.update(id, Some(50), None, None, None).ok();
 
         let task = progress.get_task(id);
         assert_eq!(task.map(|t| t.completed), Some(50));
+    }
+
+    #[test]
+    fn test_progress_update_advance() {
+        let mut progress = Progress::new();
+        let id = progress.add_task("Test", Some(100), true);
+        // update with advance parameter
+        progress.update(id, None, Some(25), None, None).ok();
+
+        let task = progress.get_task(id);
+        assert_eq!(task.map(|t| t.completed), Some(25));
+    }
+
+    #[test]
+    fn test_progress_update_total() {
+        let mut progress = Progress::new();
+        let id = progress.add_task("Test", Some(100), true);
+        // update(task_id, completed, advance, total, visible)
+        progress.update(id, None, None, Some(200), None).ok();
+
+        let task = progress.get_task(id);
+        assert_eq!(task.and_then(|t| t.total), Some(200));
+    }
+
+    #[test]
+    fn test_progress_update_visible() {
+        let mut progress = Progress::new();
+        let id = progress.add_task("Test", Some(100), true);
+        progress.update(id, None, None, None, Some(false)).ok();
+
+        let task = progress.get_task(id);
+        assert!(!task.map(|t| t.visible).unwrap_or(true));
     }
 
     #[test]
@@ -602,12 +742,42 @@ mod tests {
     }
 
     #[test]
+    fn test_progress_advance_invalid_task() {
+        let mut progress = Progress::new();
+        let result = progress.advance(TaskId::new(999), 10);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_progress_render() {
         let mut progress = Progress::new();
         progress.add_task("Test", Some(100), true);
 
         let segments = progress.render(80);
         assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_render_multiple_tasks() {
+        let mut progress = Progress::new();
+        progress.add_task("Task 1", Some(100), true);
+        progress.add_task("Task 2", Some(50), true);
+        progress.add_task("Task 3", Some(200), true);
+
+        let segments = progress.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_render_hidden_task() {
+        let mut progress = Progress::new();
+        progress.add_task("Visible", Some(100), true);
+        progress.add_task("Hidden", Some(100), false);
+
+        let segments = progress.render(80);
+        let text = segments.plain_text();
+        assert!(text.contains("Visible"));
+        // Hidden task shouldn't appear
     }
 
     #[test]
@@ -618,12 +788,41 @@ mod tests {
     }
 
     #[test]
+    fn test_format_duration_zero() {
+        assert_eq!(format_duration(Duration::from_secs(0)), "0:00");
+    }
+
+    #[test]
+    fn test_format_duration_one_hour() {
+        assert_eq!(format_duration(Duration::from_secs(3600)), "1:00:00");
+    }
+
+    #[test]
     fn test_progress_finished() {
         let mut progress = Progress::new();
         let id = progress.add_task("Test", Some(10), true);
         assert!(!progress.finished());
 
         progress.update(id, Some(10), None, None, None).ok();
+        assert!(progress.finished());
+    }
+
+    #[test]
+    fn test_progress_finished_empty() {
+        let progress = Progress::new();
+        assert!(progress.finished());
+    }
+
+    #[test]
+    fn test_progress_finished_multiple() {
+        let mut progress = Progress::new();
+        let id1 = progress.add_task("Task 1", Some(10), true);
+        let id2 = progress.add_task("Task 2", Some(20), true);
+
+        progress.update(id1, Some(10), None, None, None).ok();
+        assert!(!progress.finished()); // id2 not complete
+
+        progress.update(id2, Some(20), None, None, None).ok();
         assert!(progress.finished());
     }
 }

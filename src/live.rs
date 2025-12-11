@@ -278,11 +278,29 @@ mod tests {
     fn test_live_new() {
         let live = Live::new();
         assert!(!live.is_running());
+        assert!((live.refresh_per_second - 4.0).abs() < f64::EPSILON);
+        assert!(!live.transient);
+        assert!(live.auto_refresh);
+    }
+
+    #[test]
+    fn test_live_default() {
+        let live = Live::default();
+        assert!(!live.is_running());
+        assert!((live.refresh_per_second - 4.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_live_with_content() {
         let live = Live::with_content("Hello");
+        let content = live.content.lock().unwrap();
+        assert!(content.is_some());
+    }
+
+    #[test]
+    fn test_live_with_content_text() {
+        let text = Text::from_str("Hello World");
+        let live = Live::with_content(text);
         let content = live.content.lock().unwrap();
         assert!(content.is_some());
     }
@@ -294,15 +312,33 @@ mod tests {
     }
 
     #[test]
+    fn test_live_refresh_rate_low() {
+        let live = Live::new().refresh_per_second(0.5);
+        assert!((live.refresh_per_second - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
     fn test_live_transient() {
         let live = Live::new().transient(true);
         assert!(live.transient);
     }
 
     #[test]
+    fn test_live_transient_false() {
+        let live = Live::new().transient(false);
+        assert!(!live.transient);
+    }
+
+    #[test]
     fn test_live_auto_refresh() {
         let live = Live::new().auto_refresh(false);
         assert!(!live.auto_refresh);
+    }
+
+    #[test]
+    fn test_live_auto_refresh_true() {
+        let live = Live::new().auto_refresh(true);
+        assert!(live.auto_refresh);
     }
 
     #[test]
@@ -314,8 +350,122 @@ mod tests {
     }
 
     #[test]
+    fn test_live_update_multiple() {
+        let live = Live::new();
+        live.update("First");
+        live.update("Second");
+        live.update("Third");
+        let content = live.content.lock().unwrap();
+        assert!(content.is_some());
+    }
+
+    #[test]
     fn test_live_not_running_initially() {
         let live = Live::new();
         assert!(!live.is_running());
+    }
+
+    #[test]
+    fn test_live_refresh_no_content() {
+        let live = Live::new();
+        // Should not panic even without content
+        live.refresh();
+    }
+
+    #[test]
+    fn test_live_refresh_with_content() {
+        let live = Live::new();
+        live.update("Test content");
+        // Should not panic
+        live.refresh();
+    }
+
+    #[test]
+    fn test_live_start_stop_no_autorefresh() {
+        let mut live = Live::new().auto_refresh(false);
+        live.update("Content");
+        live.start();
+        assert!(live.is_running());
+        live.stop();
+        assert!(!live.is_running());
+    }
+
+    #[test]
+    fn test_live_double_start() {
+        let mut live = Live::new().auto_refresh(false);
+        live.start();
+        assert!(live.is_running());
+        // Second start should be no-op
+        live.start();
+        assert!(live.is_running());
+        live.stop();
+    }
+
+    #[test]
+    fn test_live_start_stop_autorefresh() {
+        let mut live = Live::new().auto_refresh(true).refresh_per_second(100.0); // Fast refresh for test
+        live.update("Content");
+        live.start();
+        assert!(live.is_running());
+        // Small sleep to let refresh thread run
+        thread::sleep(Duration::from_millis(20));
+        live.stop();
+        assert!(!live.is_running());
+    }
+
+    #[test]
+    fn test_live_transient_clear() {
+        let mut live = Live::new().auto_refresh(false).transient(true);
+        live.update("Will be cleared");
+        live.start();
+        live.stop();
+        // Should have cleared content (tested by not panicking)
+    }
+
+    #[test]
+    fn test_live_builder_chain() {
+        let live = Live::new()
+            .refresh_per_second(20.0)
+            .transient(true)
+            .auto_refresh(false);
+
+        assert!((live.refresh_per_second - 20.0).abs() < f64::EPSILON);
+        assert!(live.transient);
+        assert!(!live.auto_refresh);
+    }
+
+    #[test]
+    fn test_live_drop_stops() {
+        let mut live = Live::new().auto_refresh(false);
+        live.start();
+        assert!(live.is_running());
+        // Drop should call stop
+        drop(live);
+        // No assertion needed - just verify it doesn't panic
+    }
+
+    #[test]
+    fn test_live_run() {
+        let live = Live::new().auto_refresh(false);
+        let result = live.run(|l| {
+            l.update("During run");
+            42
+        });
+        assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn test_live_clear_lines() {
+        // Test internal clear_lines function doesn't panic
+        Live::clear_lines(0);
+        Live::clear_lines(1);
+        Live::clear_lines(5);
+    }
+
+    #[test]
+    fn test_live_line_count_initial() {
+        let live = Live::new();
+        let count = live.line_count.lock().unwrap();
+        assert_eq!(*count, 0);
     }
 }

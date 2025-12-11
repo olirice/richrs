@@ -359,6 +359,10 @@ mod tests {
         let items = vec!["a", "b", "c"];
         let columns = Columns::new(items);
         assert_eq!(columns.items.len(), 3);
+        assert!(!columns.equal);
+        assert!(!columns.expand);
+        assert!(!columns.column_first);
+        assert!(!columns.right_to_left);
     }
 
     #[test]
@@ -368,9 +372,27 @@ mod tests {
     }
 
     #[test]
+    fn test_columns_add_multiple() {
+        let columns = Columns::new(vec!["a"]).add("b").add("c").add("d");
+        assert_eq!(columns.items.len(), 4);
+    }
+
+    #[test]
     fn test_columns_equal() {
         let columns = Columns::new(vec!["short", "verylongitem"]).equal(true);
         assert!(columns.equal);
+    }
+
+    #[test]
+    fn test_columns_equal_false() {
+        let columns = Columns::new(vec!["short", "verylongitem"]).equal(false);
+        assert!(!columns.equal);
+    }
+
+    #[test]
+    fn test_columns_expand() {
+        let columns = Columns::new(vec!["a", "b"]).expand(true);
+        assert!(columns.expand);
     }
 
     #[test]
@@ -399,34 +421,126 @@ mod tests {
     }
 
     #[test]
-    fn test_columns_alignment() {
+    fn test_columns_alignment_left() {
+        let columns = Columns::new(vec!["a", "b"])
+            .align(ColumnAlign::Left)
+            .equal(true);
+        assert_eq!(columns.align, ColumnAlign::Left);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_alignment_center() {
         let columns = Columns::new(vec!["a", "b"])
             .align(ColumnAlign::Center)
             .equal(true);
         assert_eq!(columns.align, ColumnAlign::Center);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_alignment_right() {
+        let columns = Columns::new(vec!["a", "b"])
+            .align(ColumnAlign::Right)
+            .equal(true);
+        assert_eq!(columns.align, ColumnAlign::Right);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
     }
 
     #[test]
     fn test_columns_rtl() {
         let columns = Columns::new(vec!["first", "second"]).right_to_left(true);
         assert!(columns.right_to_left);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
     }
 
     #[test]
     fn test_column_first() {
         let columns = Columns::new(vec!["1", "2", "3", "4"]).column_first(true);
         assert!(columns.column_first);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
     }
 
     #[test]
     fn test_columns_padding() {
         let columns = Columns::new(vec!["a"]).padding(1, 2, 3, 4);
         assert_eq!(columns.padding, (1, 2, 3, 4));
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
     }
 
     #[test]
     fn test_columns_width() {
         let columns = Columns::new(vec!["a"]).width(40);
         assert_eq!(columns.width, Some(40));
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_title() {
+        let columns = Columns::new(vec!["a", "b"]).title("My Columns");
+        assert!(columns.title.is_some());
+    }
+
+    #[test]
+    fn test_columns_render_equal_width() {
+        let columns = Columns::new(vec!["short", "verylongitem", "medium"]).equal(true);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_render_expand() {
+        let columns = Columns::new(vec!["a", "b", "c"]).expand(true).equal(true);
+        let segments = columns.render(100);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_render_narrow() {
+        let columns = Columns::new(vec!["item1", "item2", "item3"]);
+        let segments = columns.render(20);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_render_with_padding() {
+        let columns = Columns::new(vec!["a", "b", "c"]).padding(2, 1, 2, 1);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_render_column_first() {
+        let columns = Columns::new(vec!["1", "2", "3", "4", "5", "6"]).column_first(true);
+        let segments = columns.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_render_rtl() {
+        let columns = Columns::new(vec!["first", "second", "third"]).right_to_left(true);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_columns_many_items() {
+        let items: Vec<String> = (0..20).map(|i| format!("item{}", i)).collect();
+        let columns = Columns::new(items);
+        let segments = columns.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_column_align_default() {
+        let align = ColumnAlign::default();
+        assert_eq!(align, ColumnAlign::Left);
     }
 }

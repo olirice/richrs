@@ -528,18 +528,32 @@ impl Measurable for Panel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_panel_new() {
         let panel = Panel::new("Hello, World!");
         assert!(panel.expand);
         assert!(panel.title.is_none());
+        assert!(panel.subtitle.is_none());
+        assert!(panel.border_style.is_none());
+        assert!(panel.title_style.is_none());
+        assert!(panel.subtitle_style.is_none());
     }
 
     #[test]
     fn test_panel_fit() {
         let panel = Panel::fit("Hello");
         assert!(!panel.expand);
+    }
+
+    #[test]
+    fn test_panel_expand() {
+        let panel = Panel::new("Hello").expand(false);
+        assert!(!panel.expand);
+
+        let panel = Panel::fit("Hello").expand(true);
+        assert!(panel.expand);
     }
 
     #[test]
@@ -552,6 +566,42 @@ mod tests {
     fn test_panel_with_subtitle() {
         let panel = Panel::new("Content").subtitle("Subtitle");
         assert!(panel.subtitle.is_some());
+    }
+
+    #[test]
+    fn test_panel_with_title_and_subtitle() {
+        let panel = Panel::new("Content").title("Title").subtitle("Subtitle");
+        assert!(panel.title.is_some());
+        assert!(panel.subtitle.is_some());
+    }
+
+    #[test]
+    fn test_panel_border_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Red));
+        let panel = Panel::new("Content").border_style(style);
+        assert!(panel.border_style.is_some());
+    }
+
+    #[test]
+    fn test_panel_title_style() {
+        let style = Style::new().bold();
+        let panel = Panel::new("Content").title("Title").title_style(style);
+        assert!(panel.title_style.is_some());
+    }
+
+    #[test]
+    fn test_panel_subtitle_style() {
+        let style = Style::new().italic();
+        let panel = Panel::new("Content")
+            .subtitle("Subtitle")
+            .subtitle_style(style);
+        assert!(panel.subtitle_style.is_some());
+    }
+
+    #[test]
+    fn test_panel_padding() {
+        let panel = Panel::new("Content").padding(2, 2, 2, 2);
+        assert_eq!(panel.padding, (2, 2, 2, 2));
     }
 
     #[test]
@@ -574,8 +624,55 @@ mod tests {
     }
 
     #[test]
+    fn test_panel_render_with_subtitle() {
+        let panel = Panel::new("Content").subtitle("Subtitle");
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Subtitle"));
+        assert!(text.contains("Content"));
+    }
+
+    #[test]
+    fn test_panel_render_with_title_and_subtitle() {
+        let panel = Panel::new("Content").title("Title").subtitle("Subtitle");
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+        assert!(text.contains("Subtitle"));
+        assert!(text.contains("Content"));
+    }
+
+    #[test]
+    fn test_panel_render_with_styled_title() {
+        let panel = Panel::new("Content")
+            .title("Title")
+            .title_style(Style::new().bold());
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_panel_render_with_styled_subtitle() {
+        let panel = Panel::new("Content")
+            .subtitle("Subtitle")
+            .subtitle_style(Style::new().italic());
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Subtitle"));
+    }
+
+    #[test]
     fn test_panel_from_str() {
         let panel: Panel = "Test".into();
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Test"));
+    }
+
+    #[test]
+    fn test_panel_from_string() {
+        let panel: Panel = String::from("Test").into();
         let segments = panel.render(40);
         let text = segments.plain_text();
         assert!(text.contains("Test"));
@@ -599,10 +696,91 @@ mod tests {
     }
 
     #[test]
+    fn test_panel_safe_box_false() {
+        let panel = Panel::new("Test").safe_box(false);
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        // Should use unicode box chars
+        assert!(text.contains('─') || text.contains('│'));
+    }
+
+    #[test]
     fn test_panel_measure() {
         let panel = Panel::new("Hello");
         let options = MeasureOptions::new(80);
         let measurement = panel.measure(&options).ok().unwrap_or_default();
         assert!(measurement.minimum > 0);
+    }
+
+    #[test]
+    fn test_panel_measure_with_title() {
+        let panel = Panel::new("Hi").title("A Very Long Title Here");
+        let options = MeasureOptions::new(80);
+        let measurement = panel.measure(&options).ok().unwrap_or_default();
+        // Title should increase minimum width
+        assert!(measurement.minimum > 5);
+    }
+
+    #[test]
+    fn test_panel_measure_with_subtitle() {
+        let panel = Panel::new("Hi").subtitle("A Very Long Subtitle");
+        let options = MeasureOptions::new(80);
+        let measurement = panel.measure(&options).ok().unwrap_or_default();
+        assert!(measurement.minimum > 5);
+    }
+
+    #[test]
+    fn test_panel_render_narrow() {
+        let panel = Panel::new("A");
+        let segments = panel.render(10);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_panel_render_wide() {
+        let panel = Panel::new("Test").expand(true);
+        let segments = panel.render(100);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_panel_render_with_padding() {
+        let panel = Panel::new("Content").padding(2, 3, 2, 3);
+        let segments = panel.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_panel_render_with_border_style() {
+        let style = Style::new().with_color(Color::Standard(StandardColor::Blue));
+        let panel = Panel::new("Content").border_style(style);
+        let segments = panel.render(40);
+        // Should have styled border segments
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_panel_multiline_content() {
+        let panel = Panel::new("Line 1\nLine 2\nLine 3");
+        let segments = panel.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Line 1"));
+        assert!(text.contains("Line 2"));
+        assert!(text.contains("Line 3"));
+    }
+
+    #[test]
+    fn test_panel_empty_content() {
+        let panel = Panel::new("");
+        let segments = panel.render(40);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_panel_fit_render() {
+        let panel = Panel::fit("Short");
+        let segments = panel.render(100);
+        // Fit panel should not expand to full width
+        assert!(!segments.is_empty());
     }
 }
