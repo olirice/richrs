@@ -320,6 +320,14 @@ fn main() {
 }
 ```
 
+Output:
+```
+{
+    "name": "Alice",
+    "role": "Developer",
+}
+```
+
 ## Style Reference
 
 ### Text Attributes
