@@ -527,6 +527,8 @@ pub fn format_duration(duration: Duration) -> String {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
+    #![allow(clippy::unchecked_duration_subtraction)]
     use super::*;
     use crate::color::{Color, StandardColor};
 
