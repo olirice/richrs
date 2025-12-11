@@ -361,7 +361,7 @@ impl Style {
     /// - Background colors: "on red", "on #ff0000"
     /// - Attributes: "bold", "italic", "underline", etc.
     /// - Attribute negation: "not bold", "not italic"
-    /// - Hyperlinks: "link https://example.com"
+    /// - Hyperlinks: `link https://example.com`
     ///
     /// Multiple values can be combined with spaces:
     /// "bold red on white"

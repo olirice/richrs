@@ -28,11 +28,10 @@
 //! This library provides compatible markup syntax and styling with Python Rich.
 //! The API is designed to feel Rust-native while supporting the same features.
 
-#![doc(html_root_url = "https://docs.rs/richrs/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/richrs/0.2.1")]
 
 // Re-export core types
 pub mod align;
-pub mod box_chars;
 pub mod color;
 pub mod columns;
 pub mod console;
@@ -42,15 +41,11 @@ pub mod highlighter;
 pub mod live;
 pub mod markdown;
 pub mod markup;
-pub mod measure;
-pub mod padding;
 pub mod panel;
 pub mod pretty;
 pub mod progress;
 pub mod prompt;
-pub mod protocol;
 pub mod rule;
-pub mod segment;
 pub mod spinner;
 pub mod status;
 pub mod style;
@@ -58,6 +53,18 @@ pub mod syntax;
 pub mod table;
 pub mod text;
 pub mod tree;
+
+// Internal modules - hidden from public documentation
+#[doc(hidden)]
+pub mod box_chars;
+#[doc(hidden)]
+pub mod measure;
+#[doc(hidden)]
+pub mod padding;
+#[doc(hidden)]
+pub mod protocol;
+#[doc(hidden)]
+pub mod segment;
 
 /// Prelude module for convenient imports.
 ///

@@ -1,6 +1,6 @@
 [package]
 name = "richrs"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Oliver Rice"]
 description = "A Rust port of the Rich Python library for beautiful terminal output"

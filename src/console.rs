@@ -114,7 +114,7 @@ impl ConsoleOptions {
     /// Updates the maximum width.
     #[inline]
     #[must_use]
-    pub const fn with_max_width(mut self, width: usize) -> Self {
+    pub const fn max_width(mut self, width: usize) -> Self {
         self.max_width = width;
         self
     }
@@ -122,7 +122,7 @@ impl ConsoleOptions {
     /// Updates the justification.
     #[inline]
     #[must_use]
-    pub const fn with_justify(mut self, justify: Justify) -> Self {
+    pub const fn justify(mut self, justify: Justify) -> Self {
         self.justify = justify;
         self
     }
@@ -130,7 +130,7 @@ impl ConsoleOptions {
     /// Updates the overflow behavior.
     #[inline]
     #[must_use]
-    pub const fn with_overflow(mut self, overflow: Overflow) -> Self {
+    pub const fn overflow(mut self, overflow: Overflow) -> Self {
         self.overflow = overflow;
         self
     }
@@ -962,7 +962,7 @@ mod tests {
         let opts = ConsoleOptions::new(100);
         assert_eq!(opts.max_width, 100);
 
-        let opts = opts.with_justify(Justify::Center);
+        let opts = opts.justify(Justify::Center);
         assert_eq!(opts.justify, Justify::Center);
     }
 
@@ -981,7 +981,7 @@ mod tests {
 
     #[test]
     fn test_console_options_with_overflow() {
-        let opts = ConsoleOptions::new(80).with_overflow(Overflow::Ellipsis);
+        let opts = ConsoleOptions::new(80).overflow(Overflow::Ellipsis);
         assert_eq!(opts.overflow, Overflow::Ellipsis);
     }
 
