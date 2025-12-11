@@ -239,15 +239,34 @@ mod tests {
     }
 
     #[test]
+    fn test_status_update_string() {
+        let mut status = Status::new("First");
+        status.update(String::from("Second"));
+        assert_eq!(status.message, "Second");
+    }
+
+    #[test]
     fn test_status_speed() {
         let status = Status::new("Test").speed(2.0);
         assert!((status.speed - 2.0).abs() < f64::EPSILON);
     }
 
     #[test]
+    fn test_status_speed_slow() {
+        let status = Status::new("Test").speed(0.5);
+        assert!((status.speed - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
     fn test_status_refresh_rate() {
         let status = Status::new("Test").refresh_per_second(20.0);
         assert!((status.refresh_per_second - 20.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_status_spinner() {
+        let status = Status::new("Test").spinner("line").unwrap();
+        assert_eq!(status.spinner.name(), "line");
     }
 
     #[test]
@@ -267,8 +286,66 @@ mod tests {
     }
 
     #[test]
+    fn test_status_run_returns_value() {
+        let result = Status::new("Computing...").run(|| 42);
+        assert_eq!(result, 42);
+    }
+
+    #[test]
     fn test_status_not_running_initially() {
         let status = Status::new("Test");
         assert!(!status.is_running());
+    }
+
+    #[test]
+    fn test_status_start_stop() {
+        let mut status = Status::new("Test").speed(100.0); // Fast for testing
+        status.start();
+        assert!(status.is_running());
+        thread::sleep(Duration::from_millis(20));
+        status.stop();
+        assert!(!status.is_running());
+    }
+
+    #[test]
+    fn test_status_double_start() {
+        let mut status = Status::new("Test").speed(100.0);
+        status.start();
+        status.start(); // Should be no-op
+        assert!(status.is_running());
+        status.stop();
+    }
+
+    #[test]
+    fn test_status_run_with_updates() {
+        let result = Status::new("Starting...").run_with_updates(|status| {
+            status.update("Working...");
+            status.update("Finishing...");
+            42
+        });
+        assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn test_status_builder_chain() {
+        let status = Status::new("Test")
+            .speed(1.5)
+            .refresh_per_second(15.0)
+            .spinner("dots")
+            .unwrap()
+            .spinner_style(Style::new().bold());
+
+        assert!((status.speed - 1.5).abs() < f64::EPSILON);
+        assert!((status.refresh_per_second - 15.0).abs() < f64::EPSILON);
+        assert!(status.spinner_style.is_some());
+    }
+
+    #[test]
+    fn test_status_drop_stops() {
+        let mut status = Status::new("Test").speed(100.0);
+        status.start();
+        assert!(status.is_running());
+        drop(status);
+        // No assertion needed - just verify it doesn't panic
     }
 }

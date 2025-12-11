@@ -1,3 +1,6 @@
+// Default theme lookup uses expect() on a known-valid theme name
+#![allow(clippy::expect_used)]
+
 //! Syntax highlighting for code.
 //!
 //! This module provides syntax highlighting using the `syntect` library.
@@ -36,13 +39,13 @@ use crate::segment::{Segment, Segments};
 use crate::style::Style;
 
 #[cfg(feature = "syntax")]
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 #[cfg(feature = "syntax")]
-static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 
 #[cfg(feature = "syntax")]
-static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 
 /// Syntax-highlighted code display.
 ///
@@ -423,15 +426,34 @@ mod tests {
     }
 
     #[test]
+    fn test_syntax_new_strings() {
+        let syntax = Syntax::new(String::from("code"), String::from("python"));
+        assert_eq!(syntax.code, "code");
+        assert_eq!(syntax.lexer, "python");
+    }
+
+    #[test]
     fn test_syntax_theme() {
         let syntax = Syntax::new("code", "rust").theme("Solarized (dark)");
         assert_eq!(syntax.theme, "Solarized (dark)");
     }
 
     #[test]
+    fn test_syntax_theme_string() {
+        let syntax = Syntax::new("code", "rust").theme(String::from("base16-ocean.dark"));
+        assert_eq!(syntax.theme, "base16-ocean.dark");
+    }
+
+    #[test]
     fn test_syntax_line_numbers() {
         let syntax = Syntax::new("code", "rust").line_numbers(true);
         assert!(syntax.line_numbers);
+    }
+
+    #[test]
+    fn test_syntax_line_numbers_false() {
+        let syntax = Syntax::new("code", "rust").line_numbers(false);
+        assert!(!syntax.line_numbers);
     }
 
     #[test]
@@ -447,6 +469,12 @@ mod tests {
     }
 
     #[test]
+    fn test_syntax_highlight_lines() {
+        let syntax = Syntax::new("code", "rust").highlight_lines(vec![1, 3, 5]);
+        assert_eq!(syntax.highlight_lines, Some(vec![1, 3, 5]));
+    }
+
+    #[test]
     fn test_syntax_tab_size() {
         let syntax = Syntax::new("code", "rust").tab_size(2);
         assert_eq!(syntax.tab_size, 2);
@@ -456,6 +484,12 @@ mod tests {
     fn test_syntax_word_wrap() {
         let syntax = Syntax::new("code", "rust").word_wrap(true);
         assert!(syntax.word_wrap);
+    }
+
+    #[test]
+    fn test_syntax_indent_guides() {
+        let syntax = Syntax::new("code", "rust").indent_guides(true);
+        assert!(syntax.indent_guides);
     }
 
     #[test]
@@ -483,5 +517,167 @@ mod tests {
         let output = segments.to_ansi();
         // With or without syntax feature, the code should appear in output
         assert!(output.contains("main"));
+    }
+
+    #[test]
+    fn test_syntax_render_with_padding() {
+        let syntax = Syntax::new("let x = 1;\n", "rust").padding(2);
+        let segments = syntax.render(80);
+        // Should render without errors
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_syntax_render_with_line_range() {
+        let code = "line1\nline2\nline3\nline4\nline5\n";
+        let syntax = Syntax::new(code, "text").line_range(2, 4);
+        let segments = syntax.render(80);
+        let output = segments.plain_text();
+        assert!(output.contains("line2"));
+        assert!(output.contains("line3"));
+        assert!(output.contains("line4"));
+        assert!(!output.contains("line1"));
+        assert!(!output.contains("line5"));
+    }
+
+    #[test]
+    fn test_syntax_render_with_highlight_lines() {
+        let code = "line1\nline2\nline3\n";
+        let syntax = Syntax::new(code, "text")
+            .line_numbers(true)
+            .highlight_lines(vec![2]);
+        let segments = syntax.render(80);
+        // Should render without errors
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_syntax_render_with_tabs() {
+        let code = "fn main() {\n\tprintln!(\"hello\");\n}\n";
+        let syntax = Syntax::new(code, "rust").tab_size(4);
+        let segments = syntax.render(80);
+        let output = segments.plain_text();
+        // Tabs should be replaced with spaces
+        assert!(!output.contains('\t'));
+    }
+
+    #[test]
+    fn test_syntax_render_without_trailing_newline() {
+        let code = "let x = 1"; // No trailing newline
+        let syntax = Syntax::new(code, "rust");
+        let segments = syntax.render(80);
+        // Should still render properly
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_syntax_render_empty_code() {
+        let syntax = Syntax::new("", "rust");
+        let segments = syntax.render(80);
+        // Empty code should produce empty or minimal output
+        let text = segments.plain_text();
+        assert!(text.is_empty() || text.trim().is_empty());
+    }
+
+    #[test]
+    fn test_syntax_available_themes() {
+        let themes = Syntax::available_themes();
+        // With syntax feature, should have some themes; without, empty
+        #[cfg(feature = "syntax")]
+        assert!(!themes.is_empty());
+        #[cfg(not(feature = "syntax"))]
+        assert!(themes.is_empty());
+    }
+
+    #[test]
+    fn test_syntax_available_languages() {
+        let languages = Syntax::available_languages();
+        // With syntax feature, should have some languages; without, empty
+        #[cfg(feature = "syntax")]
+        assert!(!languages.is_empty());
+        #[cfg(not(feature = "syntax"))]
+        assert!(languages.is_empty());
+    }
+
+    #[test]
+    fn test_syntax_builder_chain() {
+        let syntax = Syntax::new("fn main() {}", "rust")
+            .theme("base16-ocean.dark")
+            .line_numbers(true)
+            .start_line(10)
+            .line_range(1, 100)
+            .highlight_lines(vec![1, 2, 3])
+            .tab_size(2)
+            .word_wrap(true)
+            .indent_guides(true)
+            .padding(1);
+
+        assert_eq!(syntax.theme, "base16-ocean.dark");
+        assert!(syntax.line_numbers);
+        assert_eq!(syntax.start_line, 10);
+        assert_eq!(syntax.line_range, Some((1, 100)));
+        assert_eq!(syntax.highlight_lines, Some(vec![1, 2, 3]));
+        assert_eq!(syntax.tab_size, 2);
+        assert!(syntax.word_wrap);
+        assert!(syntax.indent_guides);
+        assert_eq!(syntax.padding, 1);
+    }
+
+    #[test]
+    fn test_syntax_render_multiline() {
+        let code = r#"fn main() {
+    let x = 1;
+    let y = 2;
+    println!("{}", x + y);
+}
+"#;
+        let syntax = Syntax::new(code, "rust").line_numbers(true);
+        let segments = syntax.render(80);
+        let output = segments.plain_text();
+        assert!(output.contains("main"));
+        assert!(output.contains("println"));
+    }
+
+    #[test]
+    fn test_syntax_render_python() {
+        let code = "def main():\n    print('hello')\n";
+        let syntax = Syntax::new(code, "python");
+        let segments = syntax.render(80);
+        let output = segments.plain_text();
+        assert!(output.contains("main"));
+        assert!(output.contains("print"));
+    }
+
+    #[test]
+    fn test_syntax_render_javascript() {
+        let code = "function hello() { console.log('hi'); }\n";
+        let syntax = Syntax::new(code, "javascript");
+        let segments = syntax.render(80);
+        let output = segments.plain_text();
+        assert!(output.contains("hello"));
+    }
+
+    #[test]
+    fn test_syntax_render_unknown_language() {
+        let code = "some random code\n";
+        let syntax = Syntax::new(code, "nonexistent_language");
+        let segments = syntax.render(80);
+        // Should fall back to plain text
+        let output = segments.plain_text();
+        assert!(output.contains("some random code"));
+    }
+
+    #[test]
+    fn test_syntax_default_values() {
+        let syntax = Syntax::new("code", "rust");
+        assert_eq!(syntax.theme, "base16-ocean.dark");
+        assert!(!syntax.line_numbers);
+        assert_eq!(syntax.start_line, 1);
+        assert!(syntax.line_range.is_none());
+        assert!(syntax.highlight_lines.is_none());
+        assert_eq!(syntax.tab_size, 4);
+        assert!(!syntax.word_wrap);
+        assert!(!syntax.indent_guides);
+        assert_eq!(syntax.padding, 0);
     }
 }

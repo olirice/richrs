@@ -204,7 +204,9 @@ impl Measurable for Rule {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
+    use crate::color::{Color, StandardColor};
 
     #[test]
     fn test_rule_new() {
@@ -214,8 +216,24 @@ mod tests {
     }
 
     #[test]
+    fn test_rule_default() {
+        let rule = Rule::default();
+        assert!(rule.title.is_none());
+        assert_eq!(rule.character, '─');
+        assert!(rule.style.is_none());
+        assert!(rule.title_style.is_none());
+    }
+
+    #[test]
     fn test_rule_with_title() {
         let rule = Rule::with_title("Test");
+        assert!(rule.title.is_some());
+    }
+
+    #[test]
+    fn test_rule_with_title_text() {
+        let text = Text::from("Title");
+        let rule = Rule::with_title(text);
         assert!(rule.title.is_some());
     }
 
@@ -245,6 +263,47 @@ mod tests {
     }
 
     #[test]
+    fn test_rule_character_asterisk() {
+        let rule = Rule::new().character('*');
+        let segments = rule.render(10);
+        let text = segments.plain_text();
+        assert!(text.contains('*'));
+    }
+
+    #[test]
+    fn test_rule_style() {
+        let style = Style::new()
+            .bold()
+            .with_color(Color::Standard(StandardColor::Red));
+        let rule = Rule::new().style(style);
+        let segments = rule.render(20);
+        // Just check it renders without error
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_rule_title_style() {
+        let style = Style::new()
+            .bold()
+            .with_color(Color::Standard(StandardColor::Blue));
+        let rule = Rule::with_title("Title").title_style(style);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_rule_title_with_existing_style() {
+        // Title already has a style, and we apply title_style on top
+        let title = Text::from("Title");
+        let title_style = Style::new().bold();
+        let rule = Rule::with_title(title).title_style(title_style);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
     fn test_rule_align_left() {
         let rule = Rule::with_title("Title").align(Justify::Left);
         let segments = rule.render(40);
@@ -253,11 +312,93 @@ mod tests {
     }
 
     #[test]
+    fn test_rule_align_right() {
+        let rule = Rule::with_title("Title").align(Justify::Right);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_rule_align_center() {
+        let rule = Rule::with_title("Title").align(Justify::Center);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_rule_align_full() {
+        let rule = Rule::with_title("Title").align(Justify::Full);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_rule_align_default() {
+        let rule = Rule::with_title("Title").align(Justify::Default);
+        let segments = rule.render(40);
+        let text = segments.plain_text();
+        assert!(text.contains("Title"));
+    }
+
+    #[test]
+    fn test_rule_end() {
+        let rule = Rule::new().end("");
+        let segments = rule.render(20);
+        let text = segments.plain_text();
+        // Without newline at end
+        assert!(!text.ends_with('\n'));
+    }
+
+    #[test]
+    fn test_rule_end_custom() {
+        let rule = Rule::new().end("\r\n");
+        let segments = rule.render(20);
+        let text = segments.plain_text();
+        assert!(text.ends_with("\r\n"));
+    }
+
+    #[test]
+    fn test_rule_narrow_width() {
+        // When width is too small for title, just render the line
+        let rule = Rule::with_title("Very Long Title That Won't Fit");
+        let segments = rule.render(10);
+        let text = segments.plain_text();
+        // Should just render the line without title
+        assert!(!text.contains("Title"));
+    }
+
+    #[test]
     fn test_rule_measure() {
         let rule = Rule::new();
         let options = MeasureOptions::new(80);
-        let measurement = rule.measure(&options).ok().unwrap_or_default();
+        let measurement = rule.measure(&options).unwrap();
         assert_eq!(measurement.minimum, 80);
         assert_eq!(measurement.maximum, 80);
+    }
+
+    #[test]
+    fn test_rule_measure_narrow() {
+        let rule = Rule::with_title("Test");
+        let options = MeasureOptions::new(20);
+        let measurement = rule.measure(&options).unwrap();
+        assert_eq!(measurement.minimum, 20);
+    }
+
+    #[test]
+    fn test_rule_builder_chain() {
+        let rule = Rule::with_title("Section")
+            .character('=')
+            .style(Style::new().bold())
+            .title_style(Style::new().italic())
+            .align(Justify::Left)
+            .end("");
+
+        let segments = rule.render(50);
+        let text = segments.plain_text();
+        assert!(text.contains("Section"));
+        assert!(text.contains('='));
     }
 }

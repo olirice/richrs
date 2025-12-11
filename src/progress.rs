@@ -825,4 +825,122 @@ mod tests {
         progress.update(id2, Some(20), None, None, None).ok();
         assert!(progress.finished());
     }
+
+    #[test]
+    fn test_task_remaining_with_progress() {
+        let mut task = Task::new(TaskId::new(1), "Test", Some(100));
+        task.start_time = Some(Instant::now() - Duration::from_secs(10));
+        task.completed = 50;
+        // 50% done in 10 seconds, should have about 10 seconds remaining
+        let remaining = task.remaining();
+        assert!(remaining.is_some());
+    }
+
+    #[test]
+    fn test_task_remaining_zero_percent() {
+        let mut task = Task::new(TaskId::new(1), "Test", Some(100));
+        task.start_time = Some(Instant::now());
+        task.completed = 0;
+        // 0% complete, can't estimate remaining
+        assert!(task.remaining().is_none());
+    }
+
+    #[test]
+    fn test_task_speed_calculation() {
+        let mut task = Task::new(TaskId::new(1), "Test", Some(100));
+        task.start_time = Some(Instant::now() - Duration::from_secs(10));
+        task.completed = 50;
+        // 50 items in 10 seconds = 5 items/sec
+        let speed = task.speed();
+        assert!(speed.is_some());
+        assert!((speed.unwrap() - 5.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn test_task_speed_no_start() {
+        let task = Task::new(TaskId::new(1), "Test", Some(100));
+        assert!(task.speed().is_none());
+    }
+
+    #[test]
+    fn test_task_is_complete_overflow() {
+        let mut task = Task::new(TaskId::new(1), "Test", Some(100));
+        task.completed = 150;
+        assert!(task.is_complete());
+    }
+
+    #[test]
+    fn test_progress_bar_pulse_char() {
+        let mut bar = ProgressBar::new();
+        bar.pulse_char = '*';
+        assert_eq!(bar.pulse_char, '*');
+    }
+
+    #[test]
+    fn test_progress_bar_finished_style() {
+        let style = Style::new().bold();
+        let mut bar = ProgressBar::new();
+        bar.finished_style = Some(style);
+        assert!(bar.finished_style.is_some());
+    }
+
+    #[test]
+    fn test_progress_bar_render_over_100() {
+        let bar = ProgressBar::new().width(20);
+        let segments = bar.render(Some(1.5)); // Over 100%
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_render_negative() {
+        let bar = ProgressBar::new().width(20);
+        let segments = bar.render(Some(-0.5)); // Negative
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_update_invalid_task() {
+        let mut progress = Progress::new();
+        let result = progress.update(TaskId::new(999), Some(10), None, None, None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_progress_render_no_total() {
+        let mut progress = Progress::new();
+        progress.add_task("Indeterminate", None, true);
+        let segments = progress.render(80);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_progress_default() {
+        let progress = Progress::default();
+        assert!(progress.tasks.is_empty());
+    }
+
+    #[test]
+    fn test_progress_bar_new() {
+        let bar = ProgressBar::new();
+        assert_eq!(bar.width, 40);
+        assert!(bar.complete_style.is_some());
+        assert!(bar.incomplete_style.is_some());
+    }
+
+    #[test]
+    fn test_format_duration_minutes() {
+        assert_eq!(format_duration(Duration::from_secs(90)), "1:30");
+    }
+
+    #[test]
+    fn test_format_duration_hours() {
+        assert_eq!(format_duration(Duration::from_secs(7200)), "2:00:00");
+    }
+
+    #[test]
+    fn test_task_fields() {
+        let mut task = Task::new(TaskId::new(1), "Test", Some(100));
+        task.fields.insert("key".to_owned(), "value".to_owned());
+        assert_eq!(task.fields.get("key"), Some(&"value".to_owned()));
+    }
 }

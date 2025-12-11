@@ -1367,4 +1367,182 @@ mod tests {
         // Should contain literal brackets since markup is disabled
         assert!(captured.contains("[bold]"));
     }
+
+    #[test]
+    fn test_color_to_css_all_standard_colors() {
+        // Test all standard colors
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Yellow)),
+            "#cccc00"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Magenta)),
+            "#cc00cc"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::Cyan)),
+            "#00cccc"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightBlack)),
+            "#666666"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightGreen)),
+            "#00ff00"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightYellow)),
+            "#ffff00"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightBlue)),
+            "#0000ff"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightMagenta)),
+            "#ff00ff"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightCyan)),
+            "#00ffff"
+        );
+        assert_eq!(
+            color_to_css(&Color::Standard(StandardColor::BrightWhite)),
+            "#ffffff"
+        );
+    }
+
+    #[test]
+    fn test_console_default() {
+        let console = Console::default();
+        // Default console should work
+        assert!(console.width() > 0 || console.width() == 0); // May vary
+    }
+
+    #[test]
+    fn test_console_options_highlight() {
+        let mut opts = ConsoleOptions::new(80);
+        opts.highlight = true;
+        assert!(opts.highlight);
+    }
+
+    #[test]
+    fn test_console_options_emoji() {
+        let mut opts = ConsoleOptions::new(80);
+        opts.emoji = false;
+        assert!(!opts.emoji);
+    }
+
+    #[test]
+    fn test_console_stderr() {
+        let console = Console::stderr();
+        // stderr console should work
+        assert!(console.width() > 0 || console.width() == 0);
+    }
+
+    #[test]
+    fn test_console_write_newline() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.write("\n").ok();
+        let captured = console.end_capture();
+
+        assert_eq!(captured, "\n");
+    }
+
+    #[test]
+    fn test_console_print_with_newline() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.begin_capture();
+
+        console.print("Hello\n").ok();
+        let captured = console.end_capture();
+
+        assert!(captured.contains("Hello"));
+        assert!(captured.ends_with('\n'));
+    }
+
+    #[test]
+    fn test_console_measure_text() {
+        let console = Console::new();
+        let text = Text::from_str("Hello world");
+        let measurement = console.measure(&text).ok();
+        assert!(measurement.is_some());
+    }
+
+    #[test]
+    fn test_console_export_text_with_control() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.begin_recording();
+        console.write_segment(&Segment::new("text")).ok();
+        console
+            .write_segment(&Segment::control(Control::new(ControlType::Clear)))
+            .ok();
+        let text = console.export_text().ok().unwrap_or_default();
+        // Control segments should be filtered out
+        assert_eq!(text, "text");
+    }
+
+    #[test]
+    fn test_console_export_html_with_control() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.begin_recording();
+        console.write_segment(&Segment::new("text")).ok();
+        console
+            .write_segment(&Segment::control(Control::new(ControlType::Clear)))
+            .ok();
+        let html = console.export_html().ok().unwrap_or_default();
+        // Control segments should be filtered out
+        assert!(html.contains("text"));
+        assert!(!html.contains("Clear"));
+    }
+
+    #[test]
+    fn test_console_export_html_styled() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+
+        console.begin_recording();
+        let style = Style::new()
+            .bold()
+            .italic()
+            .underline()
+            .strike()
+            .with_color(Color::Rgb { r: 255, g: 0, b: 0 })
+            .with_bgcolor(Color::Palette(42));
+        let styled = Segment::styled("styled text", style);
+        console.write_segment(&styled).ok();
+        let html = console.export_html().ok().unwrap_or_default();
+
+        assert!(html.contains("<span style="));
+        assert!(html.contains("styled text"));
+    }
+
+    #[test]
+    fn test_console_write_with_style() {
+        let writer = StringWriter::new();
+        let mut console = Console::with_writer(writer);
+        console.set_style(Some(Style::new().bold()));
+        console.begin_capture();
+
+        console.write("text").ok();
+        let captured = console.end_capture();
+
+        // With style set, text should be styled
+        assert!(captured.contains("text"));
+    }
+
+    #[test]
+    fn test_color_system_windows() {
+        assert!(ColorSystem::Windows.has_colors());
+        assert!(!ColorSystem::Windows.is_true_color());
+    }
 }

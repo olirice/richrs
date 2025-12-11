@@ -722,59 +722,154 @@ impl<'a> StyleTokenizer<'a> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
     use crate::color::StandardColor;
 
     #[test]
     fn test_parse_empty() {
-        let style = Style::parse("").ok().unwrap_or_default();
+        let style = Style::parse("").unwrap();
+        assert!(style.is_empty());
+    }
+
+    #[test]
+    fn test_parse_whitespace() {
+        let style = Style::parse("   ").unwrap();
         assert!(style.is_empty());
     }
 
     #[test]
     fn test_parse_color() {
-        let style = Style::parse("red").ok().unwrap_or_default();
+        let style = Style::parse("red").unwrap();
         assert_eq!(style.color, Some(Color::Standard(StandardColor::Red)));
     }
 
     #[test]
     fn test_parse_bgcolor() {
-        let style = Style::parse("on blue").ok().unwrap_or_default();
+        let style = Style::parse("on blue").unwrap();
         assert_eq!(style.bgcolor, Some(Color::Standard(StandardColor::Blue)));
     }
 
     #[test]
     fn test_parse_color_and_bgcolor() {
-        let style = Style::parse("red on blue").ok().unwrap_or_default();
+        let style = Style::parse("red on blue").unwrap();
         assert_eq!(style.color, Some(Color::Standard(StandardColor::Red)));
         assert_eq!(style.bgcolor, Some(Color::Standard(StandardColor::Blue)));
     }
 
     #[test]
     fn test_parse_bold() {
-        let style = Style::parse("bold").ok().unwrap_or_default();
+        let style = Style::parse("bold").unwrap();
         assert_eq!(style.attributes.bold, Some(true));
     }
 
     #[test]
     fn test_parse_not_bold() {
-        let style = Style::parse("not bold").ok().unwrap_or_default();
+        let style = Style::parse("not bold").unwrap();
         assert_eq!(style.attributes.bold, Some(false));
     }
 
     #[test]
+    fn test_parse_not_dim() {
+        let style = Style::parse("not dim").unwrap();
+        assert_eq!(style.attributes.dim, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_italic() {
+        let style = Style::parse("not italic").unwrap();
+        assert_eq!(style.attributes.italic, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_underline() {
+        let style = Style::parse("not underline").unwrap();
+        assert_eq!(style.attributes.underline, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_blink() {
+        let style = Style::parse("not blink").unwrap();
+        assert_eq!(style.attributes.blink, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_reverse() {
+        let style = Style::parse("not reverse").unwrap();
+        assert_eq!(style.attributes.reverse, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_conceal() {
+        let style = Style::parse("not conceal").unwrap();
+        assert_eq!(style.attributes.conceal, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_strike() {
+        let style = Style::parse("not strike").unwrap();
+        assert_eq!(style.attributes.strike, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_frame() {
+        let style = Style::parse("not frame").unwrap();
+        assert_eq!(style.attributes.frame, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_encircle() {
+        let style = Style::parse("not encircle").unwrap();
+        assert_eq!(style.attributes.encircle, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_overline() {
+        let style = Style::parse("not overline").unwrap();
+        assert_eq!(style.attributes.overline, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_underline2() {
+        let style = Style::parse("not underline2").unwrap();
+        assert_eq!(style.attributes.underline2, Some(false));
+    }
+
+    #[test]
+    fn test_parse_not_blink2() {
+        let style = Style::parse("not blink2").unwrap();
+        assert_eq!(style.attributes.blink2, Some(false));
+    }
+
+    #[test]
     fn test_parse_multiple_attributes() {
-        let style = Style::parse("bold italic underline")
-            .ok()
-            .unwrap_or_default();
+        let style = Style::parse("bold italic underline").unwrap();
         assert_eq!(style.attributes.bold, Some(true));
         assert_eq!(style.attributes.italic, Some(true));
         assert_eq!(style.attributes.underline, Some(true));
     }
 
     #[test]
+    fn test_parse_all_attributes() {
+        let style = Style::parse("bold dim italic underline underline2 blink blink2 reverse conceal strike frame encircle overline").unwrap();
+        assert_eq!(style.attributes.bold, Some(true));
+        assert_eq!(style.attributes.dim, Some(true));
+        assert_eq!(style.attributes.italic, Some(true));
+        assert_eq!(style.attributes.underline, Some(true));
+        assert_eq!(style.attributes.underline2, Some(true));
+        assert_eq!(style.attributes.blink, Some(true));
+        assert_eq!(style.attributes.blink2, Some(true));
+        assert_eq!(style.attributes.reverse, Some(true));
+        assert_eq!(style.attributes.conceal, Some(true));
+        assert_eq!(style.attributes.strike, Some(true));
+        assert_eq!(style.attributes.frame, Some(true));
+        assert_eq!(style.attributes.encircle, Some(true));
+        assert_eq!(style.attributes.overline, Some(true));
+    }
+
+    #[test]
     fn test_parse_complex() {
-        let style = Style::parse("bold red on white").ok().unwrap_or_default();
+        let style = Style::parse("bold red on white").unwrap();
         assert_eq!(style.attributes.bold, Some(true));
         assert_eq!(style.color, Some(Color::Standard(StandardColor::Red)));
         assert_eq!(style.bgcolor, Some(Color::Standard(StandardColor::White)));
@@ -782,14 +877,14 @@ mod tests {
 
     #[test]
     fn test_parse_hex_color() {
-        let style = Style::parse("#ff0000 on #00ff00").ok().unwrap_or_default();
+        let style = Style::parse("#ff0000 on #00ff00").unwrap();
         assert_eq!(style.color, Some(Color::Rgb { r: 255, g: 0, b: 0 }));
         assert_eq!(style.bgcolor, Some(Color::Rgb { r: 0, g: 255, b: 0 }));
     }
 
     #[test]
     fn test_parse_rgb_color() {
-        let style = Style::parse("rgb(255, 128, 0)").ok().unwrap_or_default();
+        let style = Style::parse("rgb(255, 128, 0)").unwrap();
         assert_eq!(
             style.color,
             Some(Color::Rgb {
@@ -801,16 +896,35 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_rgb_bgcolor() {
+        let style = Style::parse("on rgb(100, 150, 200)").unwrap();
+        assert_eq!(
+            style.bgcolor,
+            Some(Color::Rgb {
+                r: 100,
+                g: 150,
+                b: 200
+            })
+        );
+    }
+
+    #[test]
     fn test_parse_link() {
-        let style = Style::parse("link https://example.com")
-            .ok()
-            .unwrap_or_default();
+        let style = Style::parse("link https://example.com").unwrap();
+        assert_eq!(style.link, Some("https://example.com".to_owned()));
+    }
+
+    #[test]
+    fn test_parse_link_with_style() {
+        let style = Style::parse("bold blue link https://example.com").unwrap();
+        assert_eq!(style.attributes.bold, Some(true));
+        assert_eq!(style.color, Some(Color::Standard(StandardColor::Blue)));
         assert_eq!(style.link, Some("https://example.com".to_owned()));
     }
 
     #[test]
     fn test_parse_shortcuts() {
-        let style = Style::parse("b i u s").ok().unwrap_or_default();
+        let style = Style::parse("b i u s").unwrap();
         assert_eq!(style.attributes.bold, Some(true));
         assert_eq!(style.attributes.italic, Some(true));
         assert_eq!(style.attributes.underline, Some(true));
@@ -818,9 +932,18 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_more_shortcuts() {
+        let style = Style::parse("d uu r o").unwrap();
+        assert_eq!(style.attributes.dim, Some(true));
+        assert_eq!(style.attributes.underline2, Some(true));
+        assert_eq!(style.attributes.reverse, Some(true));
+        assert_eq!(style.attributes.overline, Some(true));
+    }
+
+    #[test]
     fn test_combine_styles() {
-        let base = Style::parse("bold red").ok().unwrap_or_default();
-        let overlay = Style::parse("italic on white").ok().unwrap_or_default();
+        let base = Style::parse("bold red").unwrap();
+        let overlay = Style::parse("italic on white").unwrap();
         let combined = base.combine(&overlay);
 
         assert_eq!(combined.attributes.bold, Some(true));
@@ -830,6 +953,23 @@ mod tests {
             combined.bgcolor,
             Some(Color::Standard(StandardColor::White))
         );
+    }
+
+    #[test]
+    fn test_combine_styles_with_link() {
+        let base = Style::new().link("https://base.com".to_owned());
+        let overlay = Style::new().link("https://overlay.com".to_owned());
+        let combined = base.combine(&overlay);
+        assert_eq!(combined.link, Some("https://overlay.com".to_owned()));
+    }
+
+    #[test]
+    fn test_combine_styles_base_link_wins() {
+        let base = Style::new().link("https://base.com".to_owned());
+        let overlay = Style::new().bold();
+        let combined = base.combine(&overlay);
+        assert_eq!(combined.link, Some("https://base.com".to_owned()));
+        assert_eq!(combined.attributes.bold, Some(true));
     }
 
     #[test]
@@ -843,16 +983,72 @@ mod tests {
     }
 
     #[test]
+    fn test_style_add_ref() {
+        let base = Style::new().bold();
+        let overlay = Style::new().italic();
+        let combined = base + &overlay;
+
+        assert_eq!(combined.attributes.bold, Some(true));
+        assert_eq!(combined.attributes.italic, Some(true));
+    }
+
+    #[test]
     fn test_to_ansi() {
-        let style = Style::parse("bold red").ok().unwrap_or_default();
+        let style = Style::parse("bold red").unwrap();
         let ansi = style.to_ansi();
         assert!(ansi.contains("\x1b[31m")); // red foreground
         assert!(ansi.contains("\x1b[1m")); // bold
     }
 
     #[test]
+    fn test_to_ansi_bgcolor() {
+        let style = Style::parse("on blue").unwrap();
+        let ansi = style.to_ansi();
+        assert!(ansi.contains("\x1b[44m")); // blue background
+    }
+
+    #[test]
+    fn test_to_ansi_all_attributes() {
+        let style = Style::new()
+            .bold()
+            .dim()
+            .italic()
+            .underline()
+            .blink()
+            .blink2()
+            .reverse()
+            .conceal()
+            .strike()
+            .underline2()
+            .frame()
+            .encircle()
+            .overline();
+        let ansi = style.to_ansi();
+        assert!(ansi.contains("\x1b[1m")); // bold
+        assert!(ansi.contains("\x1b[2m")); // dim
+        assert!(ansi.contains("\x1b[3m")); // italic
+        assert!(ansi.contains("\x1b[4m")); // underline
+        assert!(ansi.contains("\x1b[5m")); // blink
+        assert!(ansi.contains("\x1b[6m")); // blink2
+        assert!(ansi.contains("\x1b[7m")); // reverse
+        assert!(ansi.contains("\x1b[8m")); // conceal
+        assert!(ansi.contains("\x1b[9m")); // strike
+        assert!(ansi.contains("\x1b[21m")); // underline2
+        assert!(ansi.contains("\x1b[51m")); // frame
+        assert!(ansi.contains("\x1b[52m")); // encircle
+        assert!(ansi.contains("\x1b[53m")); // overline
+    }
+
+    #[test]
+    fn test_to_ansi_reset() {
+        let style = Style::new().bold();
+        let reset = style.to_ansi_reset();
+        assert_eq!(reset, "\x1b[0m");
+    }
+
+    #[test]
     fn test_display() {
-        let style = Style::parse("bold red on blue").ok().unwrap_or_default();
+        let style = Style::parse("bold red on blue").unwrap();
         let display = style.to_string();
         assert!(display.contains("bold"));
         assert!(display.contains("Red"));
@@ -861,8 +1057,47 @@ mod tests {
     }
 
     #[test]
+    fn test_display_all_attributes() {
+        let style = Style::new()
+            .bold()
+            .dim()
+            .italic()
+            .underline()
+            .underline2()
+            .blink()
+            .blink2()
+            .reverse()
+            .conceal()
+            .strike()
+            .frame()
+            .encircle()
+            .overline();
+        let display = style.to_string();
+        assert!(display.contains("bold"));
+        assert!(display.contains("dim"));
+        assert!(display.contains("italic"));
+        assert!(display.contains("underline"));
+        assert!(display.contains("underline2"));
+        assert!(display.contains("blink"));
+        assert!(display.contains("blink2"));
+        assert!(display.contains("reverse"));
+        assert!(display.contains("conceal"));
+        assert!(display.contains("strike"));
+        assert!(display.contains("frame"));
+        assert!(display.contains("encircle"));
+        assert!(display.contains("overline"));
+    }
+
+    #[test]
+    fn test_display_with_link() {
+        let style = Style::new().link("https://example.com".to_owned());
+        let display = style.to_string();
+        assert!(display.contains("link https://example.com"));
+    }
+
+    #[test]
     fn test_from_str() {
-        let style: Style = "bold green".parse().ok().unwrap_or_default();
+        let style: Style = "bold green".parse().unwrap();
         assert_eq!(style.attributes.bold, Some(true));
         assert_eq!(style.color, Some(Color::Standard(StandardColor::Green)));
     }
@@ -882,10 +1117,29 @@ mod tests {
     }
 
     #[test]
+    fn test_static_color_constructor() {
+        let style = Style::color(Color::Standard(StandardColor::Red));
+        assert_eq!(style.color, Some(Color::Standard(StandardColor::Red)));
+        assert!(style.bgcolor.is_none());
+    }
+
+    #[test]
+    fn test_static_bgcolor_constructor() {
+        let style = Style::bgcolor(Color::Standard(StandardColor::Blue));
+        assert!(style.color.is_none());
+        assert_eq!(style.bgcolor, Some(Color::Standard(StandardColor::Blue)));
+    }
+
+    #[test]
     fn test_parse_invalid() {
         assert!(Style::parse("on").is_err());
         assert!(Style::parse("not notacolor").is_err());
         assert!(Style::parse("link").is_err());
+    }
+
+    #[test]
+    fn test_parse_unclosed_parenthesis() {
+        assert!(Style::parse("rgb(255, 0, 0").is_err());
     }
 
     #[test]
@@ -899,11 +1153,94 @@ mod tests {
     }
 
     #[test]
+    fn test_attributes_combine() {
+        let base = Attributes {
+            bold: Some(true),
+            italic: Some(true),
+            ..Attributes::new()
+        };
+        let overlay = Attributes {
+            bold: Some(false),
+            underline: Some(true),
+            ..Attributes::new()
+        };
+        let combined = base.combine(overlay);
+        assert_eq!(combined.bold, Some(false)); // overlay wins
+        assert_eq!(combined.italic, Some(true)); // base preserved
+        assert_eq!(combined.underline, Some(true)); // overlay added
+    }
+
+    #[test]
+    fn test_attributes_combine_all_fields() {
+        let base = Attributes {
+            bold: Some(true),
+            dim: Some(true),
+            italic: Some(true),
+            underline: Some(true),
+            underline2: Some(true),
+            blink: Some(true),
+            blink2: Some(true),
+            reverse: Some(true),
+            conceal: Some(true),
+            strike: Some(true),
+            frame: Some(true),
+            encircle: Some(true),
+            overline: Some(true),
+        };
+        let overlay = Attributes::new();
+        let combined = base.combine(overlay);
+        // All base values should be preserved
+        assert_eq!(combined.bold, Some(true));
+        assert_eq!(combined.dim, Some(true));
+        assert_eq!(combined.italic, Some(true));
+        assert_eq!(combined.underline, Some(true));
+        assert_eq!(combined.underline2, Some(true));
+        assert_eq!(combined.blink, Some(true));
+        assert_eq!(combined.blink2, Some(true));
+        assert_eq!(combined.reverse, Some(true));
+        assert_eq!(combined.conceal, Some(true));
+        assert_eq!(combined.strike, Some(true));
+        assert_eq!(combined.frame, Some(true));
+        assert_eq!(combined.encircle, Some(true));
+        assert_eq!(combined.overline, Some(true));
+    }
+
+    #[test]
     fn test_style_is_empty() {
         let style = Style::new();
         assert!(style.is_empty());
 
         let style = Style::new().bold();
         assert!(!style.is_empty());
+    }
+
+    #[test]
+    fn test_style_is_empty_with_link() {
+        let style = Style::new().link("https://example.com".to_owned());
+        assert!(!style.is_empty());
+    }
+
+    #[test]
+    fn test_style_is_empty_with_color() {
+        let style = Style::color(Color::Standard(StandardColor::Red));
+        assert!(!style.is_empty());
+    }
+
+    #[test]
+    fn test_style_is_empty_with_bgcolor() {
+        let style = Style::bgcolor(Color::Standard(StandardColor::Blue));
+        assert!(!style.is_empty());
+    }
+
+    #[test]
+    fn test_attributes_default() {
+        let attrs = Attributes::default();
+        assert!(attrs.is_empty());
+    }
+
+    #[test]
+    fn test_style_default() {
+        let style = Style::default();
+        assert!(style.is_empty());
     }
 }

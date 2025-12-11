@@ -851,4 +851,300 @@ mod tests {
         assert_eq!(measurement.minimum, 5); // "hello" or "world"
         assert_eq!(measurement.maximum, 11);
     }
+
+    #[test]
+    fn test_empty_text() {
+        let text = Text::new();
+        assert!(text.is_empty());
+        assert_eq!(text.plain(), "");
+        assert_eq!(text.char_count(), 0);
+    }
+
+    #[test]
+    fn test_text_styled_empty_style() {
+        let text = Text::styled("hello", Style::new());
+        assert_eq!(text.plain(), "hello");
+        assert!(text.spans.is_empty()); // Empty style should not add span
+    }
+
+    #[test]
+    fn test_text_append_empty_style() {
+        let mut text = Text::new();
+        text.append("hello", Some(Style::new()));
+        assert!(text.spans.is_empty()); // Empty style should not add span
+    }
+
+    #[test]
+    fn test_text_append_none_style() {
+        let mut text = Text::new();
+        text.append("hello", None);
+        assert_eq!(text.plain(), "hello");
+        assert!(text.spans.is_empty());
+    }
+
+    #[test]
+    fn test_text_stylize_empty_style() {
+        let mut text = Text::from_str("hello");
+        text.stylize(0, 5, Style::new());
+        assert!(text.spans.is_empty()); // Empty style should not add span
+    }
+
+    #[test]
+    fn test_text_stylize_invalid_range() {
+        let mut text = Text::from_str("hello");
+        text.stylize(5, 0, Style::new().bold()); // end < start
+        assert!(text.spans.is_empty()); // Invalid range should not add span
+    }
+
+    #[test]
+    fn test_text_stylize_all() {
+        let mut text = Text::from_str("hello");
+        text.stylize_all(Style::new().bold());
+        assert_eq!(text.spans.len(), 1);
+        assert_eq!(text.spans[0].start, 0);
+        assert_eq!(text.spans[0].end, 5);
+    }
+
+    #[test]
+    fn test_text_stylize_all_empty_style() {
+        let mut text = Text::from_str("hello");
+        text.stylize_all(Style::new());
+        assert!(text.spans.is_empty()); // Empty style should not add span
+    }
+
+    #[test]
+    fn test_text_append_text() {
+        let mut t1 = Text::styled("hello", Style::new().bold());
+        let t2 = Text::styled(" world", Style::new().italic());
+        t1.append_text(&t2);
+        assert_eq!(t1.plain(), "hello world");
+        assert_eq!(t1.spans.len(), 2);
+        // Second span should be offset by the first text length
+        assert_eq!(t1.spans[1].start, 5);
+        assert_eq!(t1.spans[1].end, 11);
+    }
+
+    #[test]
+    fn test_text_style_at_empty() {
+        let text = Text::from_str("hello");
+        let style = text.style_at(0);
+        assert!(style.is_empty());
+    }
+
+    #[test]
+    fn test_text_style_at_overlapping_spans() {
+        let mut text = Text::from_str("hello");
+        text.stylize(0, 5, Style::new().bold());
+        text.stylize(0, 5, Style::new().italic());
+        let style = text.style_at(2);
+        assert_eq!(style.attributes.bold, Some(true));
+        assert_eq!(style.attributes.italic, Some(true));
+    }
+
+    #[test]
+    fn test_text_to_segments_no_spans() {
+        let text = Text::from_str("hello");
+        let segments = text.to_segments();
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments.plain_text(), "hello");
+    }
+
+    #[test]
+    fn test_text_to_segments_partial_spans() {
+        let mut text = Text::from_str("hello world");
+        text.stylize(6, 11, Style::new().bold());
+        let segments = text.to_segments();
+        // Should have at least 2 segments: unstyled "hello " and styled "world"
+        assert!(segments.len() >= 2);
+    }
+
+    #[test]
+    fn test_text_split_lines_empty() {
+        let text = Text::from_str("");
+        let lines = text.split_lines();
+        assert_eq!(lines.len(), 1);
+    }
+
+    #[test]
+    fn test_text_split_lines_trailing_newline() {
+        let text = Text::from_str("hello\n");
+        let lines = text.split_lines();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].plain(), "hello");
+        assert!(lines[1].is_empty());
+    }
+
+    #[test]
+    fn test_text_split_lines_preserves_spans() {
+        let mut text = Text::from_str("hello\nworld");
+        text.stylize(0, 5, Style::new().bold());
+        text.stylize(6, 11, Style::new().italic());
+        let lines = text.split_lines();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].spans.len(), 1);
+        assert_eq!(lines[1].spans.len(), 1);
+    }
+
+    #[test]
+    fn test_text_split_lines_span_across_lines() {
+        let mut text = Text::from_str("hello\nworld");
+        text.stylize(0, 11, Style::new().bold()); // Span across both lines
+        let lines = text.split_lines();
+        assert_eq!(lines.len(), 2);
+        // Both lines should have a span
+        assert!(!lines[0].spans.is_empty());
+        assert!(!lines[1].spans.is_empty());
+    }
+
+    #[test]
+    fn test_text_truncate_no_truncation_needed() {
+        let text = Text::from_str("hi");
+        let truncated = text.truncate(10, Some("..."));
+        assert_eq!(truncated.plain(), "hi");
+    }
+
+    #[test]
+    fn test_text_truncate_with_spans() {
+        let mut text = Text::from_str("hello world");
+        text.stylize(0, 5, Style::new().bold());
+        let truncated = text.truncate(5, None);
+        assert_eq!(truncated.plain(), "hello");
+        // Span should be preserved
+        assert_eq!(truncated.spans.len(), 1);
+    }
+
+    #[test]
+    fn test_text_truncate_cuts_span() {
+        let mut text = Text::from_str("hello world");
+        text.stylize(0, 11, Style::new().bold());
+        let truncated = text.truncate(5, None);
+        assert_eq!(truncated.plain(), "hello");
+        // Span should be truncated
+        assert_eq!(truncated.spans.len(), 1);
+        assert_eq!(truncated.spans[0].end, 5);
+    }
+
+    #[test]
+    fn test_text_pad_no_padding_needed() {
+        let text = Text::from_str("hello");
+        let padded = text.pad(3, Justify::Left);
+        assert_eq!(padded.plain(), "hello"); // No padding added if text is already wider
+    }
+
+    #[test]
+    fn test_text_pad_full() {
+        let text = Text::from_str("hi");
+        let padded = text.pad(5, Justify::Full);
+        assert_eq!(padded.plain(), "hi   "); // Full justification defaults to left padding
+    }
+
+    #[test]
+    fn test_text_pad_preserves_spans() {
+        let text = Text::styled("hi", Style::new().bold());
+        let padded = text.pad(5, Justify::Right);
+        assert_eq!(padded.plain(), "   hi");
+        // Check that the text has a span (the style is preserved)
+        assert!(!padded.spans.is_empty());
+    }
+
+    #[test]
+    fn test_text_highlight_words_case_sensitive() {
+        let mut text = Text::from_str("Hello hello HELLO");
+        let style = Style::new().bold();
+        text.highlight_words(&["hello"], &style, true); // case sensitive
+        assert_eq!(text.spans.len(), 1); // Only "hello" matches
+    }
+
+    #[test]
+    fn test_text_highlight_words_case_insensitive() {
+        let mut text = Text::from_str("Hello hello HELLO");
+        let style = Style::new().bold();
+        text.highlight_words(&["hello"], &style, false); // case insensitive
+        assert_eq!(text.spans.len(), 3); // All three match
+    }
+
+    #[test]
+    fn test_text_highlight_regex_no_matches() {
+        let mut text = Text::from_str("hello world");
+        let style = Style::new().bold();
+        let _ = text.highlight_regex(r"\d+", &style); // No numbers
+        assert!(text.spans.is_empty());
+    }
+
+    #[test]
+    fn test_text_add_assign_text() {
+        let mut text = Text::from_str("hello");
+        text += Text::from_str(" world");
+        assert_eq!(text.plain(), "hello world");
+    }
+
+    #[test]
+    fn test_span_len() {
+        let span = Span::new(5, 10, Style::new());
+        assert_eq!(span.len(), 5);
+    }
+
+    #[test]
+    fn test_span_is_empty() {
+        let span = Span::new(5, 5, Style::new());
+        assert!(span.is_empty());
+
+        let span = Span::new(10, 5, Style::new()); // end < start
+        assert!(span.is_empty());
+    }
+
+    #[test]
+    fn test_span_offset() {
+        let span = Span::new(0, 5, Style::new().bold());
+        let offset_span = span.offset(10);
+        assert_eq!(offset_span.start, 10);
+        assert_eq!(offset_span.end, 15);
+        assert_eq!(offset_span.style.attributes.bold, Some(true));
+    }
+
+    #[test]
+    fn test_justify_default() {
+        let justify = Justify::default();
+        assert_eq!(justify, Justify::Default);
+    }
+
+    #[test]
+    fn test_overflow_default() {
+        let overflow = Overflow::default();
+        assert_eq!(overflow, Overflow::Fold);
+    }
+
+    #[test]
+    fn test_text_unicode() {
+        let text = Text::from_str("日本語"); // 3 characters
+        assert_eq!(text.char_count(), 3);
+    }
+
+    #[test]
+    fn test_text_tab_size() {
+        let mut text = Text::new();
+        text.tab_size = 4;
+        assert_eq!(text.tab_size, 4);
+    }
+
+    #[test]
+    fn test_text_no_wrap() {
+        let mut text = Text::new();
+        text.no_wrap = true;
+        assert!(text.no_wrap);
+    }
+
+    #[test]
+    fn test_text_justify() {
+        let mut text = Text::new();
+        text.justify = Justify::Center;
+        assert_eq!(text.justify, Justify::Center);
+    }
+
+    #[test]
+    fn test_text_overflow() {
+        let mut text = Text::new();
+        text.overflow = Overflow::Ellipsis;
+        assert_eq!(text.overflow, Overflow::Ellipsis);
+    }
 }

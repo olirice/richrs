@@ -466,10 +466,24 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_new_string() {
+        let seg = Segment::new(String::from("hello"));
+        assert_eq!(seg.text, "hello");
+    }
+
+    #[test]
     fn test_segment_styled() {
         let style = Style::new().bold();
         let seg = Segment::styled("hello", style.clone());
         assert_eq!(seg.text, "hello");
+        assert_eq!(seg.style, Some(style));
+    }
+
+    #[test]
+    fn test_segment_styled_string() {
+        let style = Style::new().italic();
+        let seg = Segment::styled(String::from("world"), style.clone());
+        assert_eq!(seg.text, "world");
         assert_eq!(seg.style, Some(style));
     }
 
@@ -482,6 +496,24 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_newline() {
+        let seg = Segment::newline();
+        assert_eq!(seg.text, "\n");
+    }
+
+    #[test]
+    fn test_segment_line() {
+        let seg = Segment::line("hello");
+        assert_eq!(seg.text, "hello\n");
+    }
+
+    #[test]
+    fn test_segment_line_string() {
+        let seg = Segment::line(String::from("world"));
+        assert_eq!(seg.text, "world\n");
+    }
+
+    #[test]
     fn test_segment_cell_length() {
         let seg = Segment::new("hello");
         assert_eq!(seg.cell_length(), 5);
@@ -489,6 +521,12 @@ mod tests {
         // Wide characters
         let seg = Segment::new("日本語");
         assert_eq!(seg.cell_length(), 6);
+    }
+
+    #[test]
+    fn test_segment_cell_length_empty() {
+        let seg = Segment::new("");
+        assert_eq!(seg.cell_length(), 0);
     }
 
     #[test]
@@ -505,11 +543,67 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_to_ansi_empty_style() {
+        let seg = Segment::styled("hello", Style::new());
+        let ansi = seg.to_ansi();
+        assert_eq!(ansi, "hello"); // Empty style should not add ANSI codes
+    }
+
+    #[test]
+    fn test_segment_to_ansi_control() {
+        let ctrl = Control::new(ControlType::Clear);
+        let seg = Segment::control(ctrl);
+        assert_eq!(seg.to_ansi(), "\x1b[2J");
+    }
+
+    #[test]
     fn test_segment_split_at() {
         let seg = Segment::new("hello world");
         let (left, right) = seg.split_at(5);
         assert_eq!(left.text, "hello");
         assert_eq!(right.text, " world");
+    }
+
+    #[test]
+    fn test_segment_split_at_preserves_style() {
+        let style = Style::new().bold();
+        let seg = Segment::styled("hello world", style.clone());
+        let (left, right) = seg.split_at(5);
+        assert_eq!(left.style, Some(style.clone()));
+        assert_eq!(right.style, Some(style));
+    }
+
+    #[test]
+    fn test_segment_split_at_control() {
+        let ctrl = Control::new(ControlType::Clear);
+        let seg = Segment::control(ctrl);
+        let (left, right) = seg.split_at(5);
+        assert!(left.is_control());
+        assert_eq!(right.text, "");
+    }
+
+    #[test]
+    fn test_segment_split_at_wide_chars() {
+        let seg = Segment::new("日本語"); // 6 cells (2 each)
+        let (left, right) = seg.split_at(2);
+        assert_eq!(left.text, "日");
+        assert_eq!(right.text, "本語");
+    }
+
+    #[test]
+    fn test_segment_split_at_zero() {
+        let seg = Segment::new("hello");
+        let (left, right) = seg.split_at(0);
+        assert_eq!(left.text, "");
+        assert_eq!(right.text, "hello");
+    }
+
+    #[test]
+    fn test_segment_split_at_beyond_length() {
+        let seg = Segment::new("hi");
+        let (left, right) = seg.split_at(100);
+        assert_eq!(left.text, "hi");
+        assert_eq!(right.text, "");
     }
 
     #[test]
@@ -520,10 +614,30 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_default() {
+        let seg = Segment::default();
+        assert_eq!(seg.text, "");
+        assert!(seg.style.is_none());
+        assert!(seg.control.is_none());
+    }
+
+    #[test]
+    fn test_segment_display() {
+        let seg = Segment::new("hello");
+        assert_eq!(format!("{}", seg), "hello");
+    }
+
+    #[test]
     fn test_segments_new() {
         let segs = Segments::new();
         assert!(segs.is_empty());
         assert_eq!(segs.len(), 0);
+    }
+
+    #[test]
+    fn test_segments_from_vec() {
+        let segs = Segments::from_vec(vec![Segment::new("a"), Segment::new("b")]);
+        assert_eq!(segs.len(), 2);
     }
 
     #[test]
@@ -544,6 +658,23 @@ mod tests {
     }
 
     #[test]
+    fn test_segments_plain_text_excludes_control() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("hello"));
+        segs.push(Segment::control(Control::new(ControlType::Clear)));
+        segs.push(Segment::new("world"));
+        assert_eq!(segs.plain_text(), "helloworld");
+    }
+
+    #[test]
+    fn test_segments_to_ansi() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("hello"));
+        segs.push(Segment::new(" world"));
+        assert_eq!(segs.to_ansi(), "hello world");
+    }
+
+    #[test]
     fn test_segments_split_lines() {
         let mut segs = Segments::new();
         segs.push(Segment::new("hello\nworld"));
@@ -560,6 +691,49 @@ mod tests {
     }
 
     #[test]
+    fn test_segments_split_lines_multiple_newlines() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("a\nb\nc"));
+        let lines = segs.split_lines();
+        assert_eq!(lines.len(), 3);
+    }
+
+    #[test]
+    fn test_segments_split_lines_with_control() {
+        let mut segs = Segments::new();
+        segs.push(Segment::control(Control::new(ControlType::Clear)));
+        segs.push(Segment::new("hello"));
+        let lines = segs.split_lines();
+        assert_eq!(lines.len(), 1);
+    }
+
+    #[test]
+    fn test_segments_split_lines_empty_line() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("a\n\nb"));
+        let lines = segs.split_lines();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[1].plain_text(), "");
+    }
+
+    #[test]
+    fn test_segments_split_lines_with_style() {
+        let style = Style::new().bold();
+        let mut segs = Segments::new();
+        segs.push(Segment::styled("hello\nworld", style.clone()));
+        let lines = segs.split_lines();
+        assert_eq!(lines.len(), 2);
+        // Check that style is preserved
+        for line in &lines {
+            for seg in line.iter() {
+                if !seg.text.is_empty() {
+                    assert_eq!(seg.style, Some(style.clone()));
+                }
+            }
+        }
+    }
+
+    #[test]
     fn test_control_to_ansi() {
         assert_eq!(Control::new(ControlType::Clear).to_ansi(), "\x1b[2J");
         assert_eq!(Control::new(ControlType::Home).to_ansi(), "\x1b[H");
@@ -571,6 +745,68 @@ mod tests {
         assert_eq!(
             Control::with_params(ControlType::CursorMoveTo, vec![10, 20]).to_ansi(),
             "\x1b[10;20H"
+        );
+    }
+
+    #[test]
+    fn test_control_all_types() {
+        assert_eq!(Control::new(ControlType::Home).to_ansi(), "\x1b[H");
+        assert_eq!(Control::new(ControlType::CarriageReturn).to_ansi(), "\r");
+        assert_eq!(Control::new(ControlType::Clear).to_ansi(), "\x1b[2J");
+        assert_eq!(Control::new(ControlType::ShowCursor).to_ansi(), "\x1b[?25h");
+        assert_eq!(Control::new(ControlType::HideCursor).to_ansi(), "\x1b[?25l");
+        assert_eq!(
+            Control::new(ControlType::EnableAlternateScreen).to_ansi(),
+            "\x1b[?1049h"
+        );
+        assert_eq!(
+            Control::new(ControlType::DisableAlternateScreen).to_ansi(),
+            "\x1b[?1049l"
+        );
+        assert_eq!(Control::new(ControlType::Bell).to_ansi(), "\x07");
+        assert_eq!(Control::new(ControlType::SetWindowTitle).to_ansi(), "");
+        assert_eq!(Control::new(ControlType::CursorUp).to_ansi(), "\x1b[1A");
+        assert_eq!(Control::new(ControlType::CursorDown).to_ansi(), "\x1b[1B");
+        assert_eq!(
+            Control::new(ControlType::CursorForward).to_ansi(),
+            "\x1b[1C"
+        );
+        assert_eq!(
+            Control::new(ControlType::CursorBackward).to_ansi(),
+            "\x1b[1D"
+        );
+        assert_eq!(
+            Control::new(ControlType::CursorMoveTo).to_ansi(),
+            "\x1b[1;1H"
+        );
+        assert_eq!(
+            Control::new(ControlType::EraseEndOfLine).to_ansi(),
+            "\x1b[K"
+        );
+        assert_eq!(Control::new(ControlType::EraseLine).to_ansi(), "\x1b[2K");
+    }
+
+    #[test]
+    fn test_control_with_params() {
+        assert_eq!(
+            Control::with_params(ControlType::CursorUp, vec![10]).to_ansi(),
+            "\x1b[10A"
+        );
+        assert_eq!(
+            Control::with_params(ControlType::CursorDown, vec![3]).to_ansi(),
+            "\x1b[3B"
+        );
+        assert_eq!(
+            Control::with_params(ControlType::CursorForward, vec![7]).to_ansi(),
+            "\x1b[7C"
+        );
+        assert_eq!(
+            Control::with_params(ControlType::CursorBackward, vec![2]).to_ansi(),
+            "\x1b[2D"
+        );
+        assert_eq!(
+            Control::with_params(ControlType::CursorMoveTo, vec![5, 10]).to_ansi(),
+            "\x1b[5;10H"
         );
     }
 
@@ -597,6 +833,40 @@ mod tests {
     }
 
     #[test]
+    fn test_segments_iter_mut() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("a"));
+        segs.push(Segment::new("b"));
+
+        for seg in segs.iter_mut() {
+            seg.text.push('!');
+        }
+
+        let texts: Vec<_> = segs.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(texts, vec!["a!", "b!"]);
+    }
+
+    #[test]
+    fn test_segments_into_iter() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("a"));
+        segs.push(Segment::new("b"));
+
+        let texts: Vec<_> = segs.into_iter().map(|s| s.text).collect();
+        assert_eq!(texts, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn test_segments_into_iter_ref() {
+        let mut segs = Segments::new();
+        segs.push(Segment::new("a"));
+        segs.push(Segment::new("b"));
+
+        let texts: Vec<_> = (&segs).into_iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(texts, vec!["a", "b"]);
+    }
+
+    #[test]
     fn test_segments_from_iterator() {
         let segs: Segments = vec![Segment::new("a"), Segment::new("b")]
             .into_iter()
@@ -610,5 +880,17 @@ mod tests {
         segs.push(Segment::new("a"));
         segs.extend(vec![Segment::new("b"), Segment::new("c")]);
         assert_eq!(segs.len(), 3);
+    }
+
+    #[test]
+    fn test_segments_default() {
+        let segs = Segments::default();
+        assert!(segs.is_empty());
+    }
+
+    #[test]
+    fn test_segments_cell_length_empty() {
+        let segs = Segments::new();
+        assert_eq!(segs.cell_length(), 0);
     }
 }

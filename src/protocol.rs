@@ -81,6 +81,7 @@ pub trait RichRepr {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::segment::Segment;
 
     #[test]
     fn test_render_options_default() {
@@ -94,5 +95,54 @@ mod tests {
     fn test_render_options_new() {
         let opts = RenderOptions::new(120);
         assert_eq!(opts.max_width, 120);
+        assert!(!opts.highlight);
+        assert!(opts.markup);
+    }
+
+    #[test]
+    fn test_render_options_fields() {
+        let mut opts = RenderOptions::new(100);
+        opts.highlight = true;
+        opts.markup = false;
+        assert_eq!(opts.max_width, 100);
+        assert!(opts.highlight);
+        assert!(!opts.markup);
+    }
+
+    // Test a simple Renderable implementation
+    struct SimpleRenderable {
+        text: String,
+    }
+
+    impl Renderable for SimpleRenderable {
+        fn render(&self, _options: &RenderOptions) -> Result<Segments> {
+            let mut segments = Segments::new();
+            segments.push(Segment::new(&self.text));
+            Ok(segments)
+        }
+    }
+
+    #[test]
+    fn test_renderable_render() {
+        let r = SimpleRenderable {
+            text: "Hello".to_string(),
+        };
+        let opts = RenderOptions::new(80);
+        let result = r.render(&opts);
+        assert!(result.is_ok());
+        let segments = result.unwrap();
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_renderable_measure_default() {
+        let r = SimpleRenderable {
+            text: "Hello".to_string(),
+        };
+        let opts = MeasureOptions::new(80);
+        let result = r.measure(&opts);
+        assert!(result.is_ok());
+        let measurement = result.unwrap();
+        assert!(measurement.minimum > 0);
     }
 }

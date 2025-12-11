@@ -788,4 +788,248 @@ mod tests {
         let output = segments.to_ansi();
         assert_eq!(output, "just plain text");
     }
+
+    #[test]
+    fn test_repr_highlighter_default() {
+        let highlighter = ReprHighlighter::default();
+        assert!(!highlighter.number_style.is_empty());
+    }
+
+    #[test]
+    fn test_repr_highlighter_custom_styles() {
+        let highlighter = ReprHighlighter::new()
+            .number_style(Style::default().bold())
+            .string_style(Style::default().italic())
+            .bool_style(Style::default().underline())
+            .none_style(Style::default().dim())
+            .attr_style(Style::default())
+            .url_style(Style::default().underline())
+            .uuid_style(Style::default().bold());
+
+        let segments = highlighter.highlight("num = 42, str = \"test\", url = https://x.com");
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_repr_highlighter_binary() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("binary = 0b101010");
+        let output = segments.to_ansi();
+        assert!(output.contains("0b101010"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_octal() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("octal = 0o755");
+        let output = segments.to_ansi();
+        assert!(output.contains("0o755"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_float() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("float = 42.5");
+        let output = segments.to_ansi();
+        assert!(output.contains("42.5"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_negative() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("negative = -42");
+        let output = segments.to_ansi();
+        assert!(output.contains("-42"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_scientific() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("scientific = 1e10");
+        let output = segments.to_ansi();
+        assert!(output.contains("1e10"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_single_quote_string() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("name = 'hello'");
+        let output = segments.to_ansi();
+        assert!(output.contains("hello"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_false_bool() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("flag = false");
+        let output = segments.to_ansi();
+        assert!(output.contains("false"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_true_python_style() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("flag = True");
+        let output = segments.to_ansi();
+        assert!(output.contains("True"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_null() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("value = null");
+        let output = segments.to_ansi();
+        assert!(output.contains("null"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_nil() {
+        let highlighter = ReprHighlighter::new();
+        let segments = highlighter.highlight("value = nil");
+        let output = segments.to_ansi();
+        assert!(output.contains("nil"));
+    }
+
+    #[test]
+    fn test_repr_highlighter_attr_style() {
+        let highlighter = ReprHighlighter::new().attr_style(Style::default().bold());
+        let segments = highlighter.highlight("name = test");
+        // Should have styled attribute
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_iso_highlighter_default() {
+        let highlighter = ISOHighlighter::default();
+        assert!(!highlighter.date_style.is_empty());
+    }
+
+    #[test]
+    fn test_iso_highlighter_custom_styles() {
+        let highlighter = ISOHighlighter::new()
+            .date_style(Style::default().bold())
+            .time_style(Style::default().italic())
+            .timezone_style(Style::default().dim());
+
+        let segments = highlighter.highlight("2024-01-15T10:30:00Z");
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_iso_highlighter_with_offset() {
+        let highlighter = ISOHighlighter::new();
+        let segments = highlighter.highlight("Time: 2024-01-15T10:30:00+05:30");
+        let output = segments.to_ansi();
+        assert!(output.contains("2024-01-15"));
+        assert!(output.contains("10:30:00"));
+        assert!(output.contains("+05:30"));
+    }
+
+    #[test]
+    fn test_iso_highlighter_date_only() {
+        let highlighter = ISOHighlighter::new();
+        let segments = highlighter.highlight("2024-01-15");
+        let output = segments.to_ansi();
+        assert!(output.contains("2024-01-15"));
+    }
+
+    #[test]
+    fn test_iso_highlighter_no_match() {
+        let highlighter = ISOHighlighter::new();
+        let segments = highlighter.highlight("not a date");
+        let output = segments.to_ansi();
+        assert_eq!(output, "not a date");
+    }
+
+    #[test]
+    fn test_iso_highlighter_empty() {
+        let highlighter = ISOHighlighter::new();
+        let segments = highlighter.highlight("");
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_regex_highlighter_default() {
+        let highlighter = RegexHighlighter::default();
+        assert!(highlighter.patterns.is_empty());
+    }
+
+    #[test]
+    fn test_regex_highlighter_multiple_patterns() {
+        let highlighter = RegexHighlighter::new()
+            .pattern(r"\bERROR\b", Style::default().bold())
+            .pattern(r"\bWARN\b", Style::default().italic());
+
+        let segments = highlighter.highlight("ERROR and WARN messages");
+        let output = segments.to_ansi();
+        assert!(output.contains("ERROR"));
+        assert!(output.contains("WARN"));
+    }
+
+    #[test]
+    fn test_regex_highlighter_no_match() {
+        let highlighter = RegexHighlighter::new().pattern(r"\bERROR\b", Style::default());
+        let segments = highlighter.highlight("no errors here");
+        let output = segments.to_ansi();
+        assert_eq!(output, "no errors here");
+    }
+
+    #[test]
+    fn test_regex_highlighter_empty() {
+        let highlighter = RegexHighlighter::new();
+        let segments = highlighter.highlight("");
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_json_highlighter_default() {
+        let highlighter = JSONHighlighter::default();
+        assert!(!highlighter.key_style.is_empty());
+    }
+
+    #[test]
+    fn test_json_highlighter_custom_styles() {
+        let highlighter = JSONHighlighter::new()
+            .key_style(Style::default().bold())
+            .string_style(Style::default().italic())
+            .number_style(Style::default().bold())
+            .bool_style(Style::default().underline())
+            .null_style(Style::default().dim())
+            .bracket_style(Style::default().bold());
+
+        let segments = highlighter.highlight(r#"{"key": "value"}"#);
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_json_highlighter_brackets() {
+        let highlighter = JSONHighlighter::new();
+        let segments = highlighter.highlight(r#"{"arr": [1, 2]}"#);
+        let output = segments.to_ansi();
+        assert!(output.contains("{"));
+        assert!(output.contains("["));
+    }
+
+    #[test]
+    fn test_json_highlighter_string_value() {
+        let highlighter = JSONHighlighter::new();
+        let segments = highlighter.highlight(r#"{"name": "Alice"}"#);
+        let output = segments.to_ansi();
+        assert!(output.contains("Alice"));
+    }
+
+    #[test]
+    fn test_json_highlighter_empty() {
+        let highlighter = JSONHighlighter::new();
+        let segments = highlighter.highlight("");
+        assert!(!segments.is_empty());
+    }
+
+    #[test]
+    fn test_json_highlighter_no_match() {
+        let highlighter = JSONHighlighter::new();
+        let segments = highlighter.highlight("plain text");
+        let output = segments.to_ansi();
+        assert!(output.contains("plain text"));
+    }
 }
