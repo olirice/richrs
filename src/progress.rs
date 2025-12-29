@@ -528,7 +528,10 @@ pub fn format_duration(duration: Duration) -> String {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used)]
-    #![allow(clippy::unchecked_duration_subtraction)]
+    #![allow(unknown_lints)]
+    #![allow(renamed_and_removed_lints)]
+    #![allow(clippy::unchecked_duration_subtraction)] // Rust 1.91 and earlier
+    #![allow(clippy::unchecked_time_subtraction)] // Rust 1.92+
     use super::*;
     use crate::color::{Color, StandardColor};
 
