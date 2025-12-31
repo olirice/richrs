@@ -322,14 +322,17 @@ def record_animated(example_name, output_path, duration=8, fps=10, width=600, fi
         new_img.paste(img.crop((0, 0, img.width, paste_height)), (0, 0))
         normalized.append(new_img)
 
-    # Remove duplicate consecutive frames
+    # Remove duplicate consecutive frames (but keep enough for animation)
     deduped = [normalized[0]]
     for img in normalized[1:]:
+        # Only dedupe if truly identical - keep animation frames
         if list(img.getdata()) != list(deduped[-1].getdata()):
             deduped.append(img)
 
-    if len(deduped) < 2:
-        deduped = normalized[:10]  # Keep at least some frames
+    # For animations, ensure we have enough frames
+    if len(deduped) < 5 and len(normalized) >= 5:
+        # Keep more frames if deduplication was too aggressive
+        deduped = normalized[::max(1, len(normalized) // 20)]  # Sample ~20 frames
 
     # Save as GIF
     frame_duration = int(1000 / fps)
@@ -371,10 +374,10 @@ def main():
 
     # Animated demos (GIF) - (name, output, duration, fps, width, height)
     animated_demos = [
-        ('progress', 'progress.gif', 6, 10, 600, 120),
-        ('spinners', 'spinners.gif', 5, 12, 550, 200),
-        ('status', 'status.gif', 8, 10, 550, 200),
-        ('live', 'live.gif', 8, 10, 450, 200),
+        ('progress', 'progress.gif', 6, 10, 600, 160),
+        ('spinners', 'spinners.gif', 6, 12, 550, 250),
+        ('status', 'status.gif', 8, 10, 550, 220),
+        ('live', 'live.gif', 8, 10, 450, 220),
     ]
 
     # Record static demos
