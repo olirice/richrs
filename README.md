@@ -93,7 +93,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/styling.png" alt="Text styling" width="700">
+<img src="assets/styling.png" alt="Text styling" width="650">
 
 ### Panels
 
@@ -112,7 +112,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/panels.png" alt="Panels" width="600">
+<img src="assets/panels.png" alt="Panels" width="550">
 
 ### Tables
 
@@ -136,7 +136,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/tables.png" alt="Tables" width="550">
+<img src="assets/tables.png" alt="Tables" width="500">
 
 ### Trees
 
@@ -159,7 +159,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/trees.png" alt="Trees" width="500">
+<img src="assets/trees.png" alt="Trees" width="400">
 
 ### Progress Bars
 
@@ -179,7 +179,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/progress.gif" alt="Progress bars" width="700">
+<img src="assets/progress.gif" alt="Progress bars" width="600">
 
 ### Spinners
 
@@ -201,7 +201,7 @@ fn main() -> Result<()> {
 }
 ```
 
-<img src="assets/spinners.gif" alt="Spinners" width="700">
+<img src="assets/spinners.gif" alt="Spinners" width="500">
 
 ### Status (Spinner with Message)
 
@@ -219,6 +219,8 @@ fn main() -> Result<()> {
     Ok(())
 }
 ```
+
+<img src="assets/status.gif" alt="Status spinner" width="450">
 
 ### Prompts
 
@@ -267,6 +269,8 @@ fn main() {
 }
 ```
 
+<img src="assets/syntax.png" alt="Syntax highlighting" width="600">
+
 ### Markdown
 
 Requires the `markdown` feature.
@@ -285,6 +289,8 @@ fn main() -> Result<()> {
 }
 ```
 
+<img src="assets/markdown.png" alt="Markdown rendering" width="650">
+
 ### Live Display
 
 ```rust
@@ -302,6 +308,8 @@ fn main() -> Result<()> {
     Ok(())
 }
 ```
+
+<img src="assets/live.gif" alt="Live display" width="400">
 
 ### Pretty Printing
 
