@@ -97,33 +97,92 @@ def parse_ansi_text(text):
     return segments
 
 
-def process_carriage_returns(text):
-    """Process carriage returns to simulate terminal behavior."""
-    lines = text.split('\n')
-    result = []
-    for line in lines:
-        if '\r' in line:
-            # Process carriage returns - later content overwrites earlier
-            parts = line.split('\r')
-            # Start with empty line, each part overwrites from beginning
-            current = ''
-            for part in parts:
-                if part:
-                    # Overwrite from beginning, keeping rest if current is longer
-                    if len(part) >= len(current):
-                        current = part
-                    else:
-                        current = part + current[len(part):]
-            result.append(current)
+def process_terminal_sequences(text):
+    """Process terminal escape sequences to simulate terminal behavior."""
+    # Handle cursor-up and carriage returns while preserving color codes
+    lines = []
+    current_line = ''
+    i = 0
+
+    while i < len(text):
+        char = text[i]
+
+        if char == '\x1b' and i + 1 < len(text) and text[i + 1] == '[':
+            # Parse escape sequence
+            j = i + 2
+            while j < len(text) and text[j] in '0123456789;':
+                j += 1
+            if j < len(text):
+                code = text[j]
+                param_str = text[i + 2:j] if j > i + 2 else ''
+
+                if code == 'A':  # Cursor up
+                    # Finish current line
+                    if current_line:
+                        lines.append(current_line)
+                        current_line = ''
+                    # Move up n lines (remove them so they get overwritten)
+                    n = int(param_str) if param_str else 1
+                    lines = lines[:-n] if len(lines) >= n else []
+                    i = j + 1
+                    continue
+                elif code == 'J':  # Erase display
+                    # [2J clears entire screen
+                    if param_str == '2':
+                        lines = []
+                        current_line = ''
+                    i = j + 1
+                    continue
+                elif code == 'H':  # Cursor position / home
+                    # Just skip - we handle line-by-line anyway
+                    i = j + 1
+                    continue
+                elif code == 'm':  # Color code - preserve it
+                    current_line += text[i:j + 1]
+                    i = j + 1
+                    continue
+                elif code in 'BCDKG':  # Other cursor/erase codes - skip
+                    i = j + 1
+                    continue
+                else:
+                    # Unknown code - preserve it
+                    current_line += text[i:j + 1]
+                    i = j + 1
+                    continue
+
+            # Malformed sequence - skip the escape
+            i += 1
+            continue
+
+        elif char == '\r':
+            # Check for \r\n (Windows line ending) vs bare \r (carriage return)
+            if i + 1 < len(text) and text[i + 1] == '\n':
+                # \r\n - treat as newline
+                lines.append(current_line)
+                current_line = ''
+                i += 2  # Skip both \r and \n
+                continue
+            else:
+                # Bare \r - carriage return, reset to start of line
+                current_line = ''
+        elif char == '\n':
+            lines.append(current_line)
+            current_line = ''
         else:
-            result.append(line)
-    return '\n'.join(result)
+            current_line += char
+
+        i += 1
+
+    if current_line:
+        lines.append(current_line)
+
+    return '\n'.join(lines)
 
 
 def render_to_image(text, width=600, font_size=14, padding=20, bottom_padding=None):
     """Render ANSI text to a PIL Image."""
-    # Process carriage returns first
-    text = process_carriage_returns(text)
+    # Process terminal sequences (cursor movement, carriage returns, etc.)
+    text = process_terminal_sequences(text)
 
     # Clean control sequences
     text = re.sub(r'\x1b\[\?25[lh]', '', text)  # hide/show cursor
@@ -322,28 +381,55 @@ def record_animated(example_name, output_path, duration=8, fps=10, width=600, fi
         new_img.paste(img.crop((0, 0, img.width, paste_height)), (0, 0))
         normalized.append(new_img)
 
-    # Remove duplicate consecutive frames (but keep enough for animation)
-    deduped = [normalized[0]]
-    for img in normalized[1:]:
-        # Only dedupe if truly identical - keep animation frames
-        if list(img.getdata()) != list(deduped[-1].getdata()):
-            deduped.append(img)
+    # Skip empty/blank frames at the beginning
+    bg_tuple = bg_color
+    non_empty_start = 0
+    for i, img in enumerate(normalized):
+        pixels = list(img.getdata())
+        # Check if frame has any non-background content
+        if len(set(pixels)) > 1:
+            non_empty_start = i
+            break
+    normalized = normalized[non_empty_start:]
 
-    # For animations, ensure we have enough frames
-    if len(deduped) < 5 and len(normalized) >= 5:
-        # Keep more frames if deduplication was too aggressive
-        deduped = normalized[::max(1, len(normalized) // 20)]  # Sample ~20 frames
+    if not normalized:
+        print(f"  Warning: All frames are blank for {example_name}")
+        return
+
+    # Sample frames to keep GIF size reasonable (max ~60 frames)
+    if len(normalized) > 60:
+        step = len(normalized) // 60
+        final_frames = normalized[::step]
+    else:
+        final_frames = normalized
+
+    # Convert to palette mode for proper GIF animation
+    # Find frame with most content to use as palette reference
+    best_idx = 0
+    best_unique = 0
+    for i, frame in enumerate(final_frames[:min(10, len(final_frames))]):
+        unique = len(set(frame.getdata()))
+        if unique > best_unique:
+            best_unique = unique
+            best_idx = i
+
+    ref_p = final_frames[best_idx].convert('P', palette=Image.ADAPTIVE, colors=256)
+    gif_frames = []
+    for frame in final_frames:
+        p_frame = frame.quantize(palette=ref_p)
+        gif_frames.append(p_frame)
 
     # Save as GIF
     frame_duration = int(1000 / fps)
-    deduped[0].save(
+    gif_frames[0].save(
         output_path,
         save_all=True,
-        append_images=deduped[1:],
+        append_images=gif_frames[1:],
         duration=frame_duration,
-        loop=0
+        loop=0,
+        optimize=False
     )
-    print(f"  Saved: {output_path} ({len(deduped)} frames)")
+    print(f"  Saved: {output_path} ({len(gif_frames)} frames)")
 
 
 def main():
@@ -374,9 +460,9 @@ def main():
 
     # Animated demos (GIF) - (name, output, duration, fps, width, height)
     animated_demos = [
-        ('progress', 'progress.gif', 6, 10, 600, 160),
-        ('spinners', 'spinners.gif', 6, 12, 550, 250),
-        ('status', 'status.gif', 8, 10, 550, 220),
+        ('progress', 'progress.gif', 8, 12, 650, 200),
+        ('spinners', 'spinners.gif', 8, 12, 600, 300),
+        ('status', 'status.gif', 8, 10, 550, 220),  # Don't change - looks good
         ('live', 'live.gif', 8, 10, 450, 220),
     ]
 
@@ -393,7 +479,7 @@ def main():
 
     # Record main demo (it's a binary, not an example)
     print("\nRecording main demo...")
-    record_animated('main demo', str(assets_dir / 'demo.gif'), duration=30, fps=8, width=800, fixed_height=600,
+    record_animated('main demo', str(assets_dir / 'demo.gif'), duration=35, fps=10, width=800, fixed_height=550,
                    cmd='./target/release/richrs')
 
     print("\nAll demos recorded!")
