@@ -1,35 +1,35 @@
 //! Status display demo
-use richrs::status::Status;
+use richrs::spinner::Spinner;
+use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
 fn main() {
     eprintln!();
+    eprintln!("  \x1b[1mStatus Spinner Demo\x1b[0m");
+    eprintln!();
 
-    // Demo 1: Simple status with dots spinner
-    let mut status = Status::new("Loading configuration...");
-    status.start();
-    thread::sleep(Duration::from_secs(2));
-    status.stop();
-    eprintln!("  \x1b[32m✓\x1b[0m Configuration loaded");
+    // Show different spinners with status messages
+    let spinners = [
+        ("dots", "Loading configuration..."),
+        ("arc", "Connecting to server..."),
+        ("moon", "Processing data..."),
+    ];
 
-    // Demo 2: Status with different spinner
-    let mut status = Status::new("Connecting to server...")
-        .spinner("arc")
-        .unwrap();
-    status.start();
-    thread::sleep(Duration::from_secs(2));
-    status.stop();
-    eprintln!("  \x1b[32m✓\x1b[0m Connected");
+    for (spinner_name, message) in spinners {
+        let mut spinner = Spinner::new(spinner_name).unwrap();
 
-    // Demo 3: Status with moon spinner
-    let mut status = Status::new("Processing data...")
-        .spinner("moon")
-        .unwrap();
-    status.start();
-    thread::sleep(Duration::from_secs(2));
-    status.stop();
-    eprintln!("  \x1b[32m✓\x1b[0m Processing complete");
+        // Show spinner animation for a few frames
+        for _ in 0..12 {
+            eprint!("\r  {} {}", spinner.next_frame(), message);
+            io::stderr().flush().unwrap();
+            thread::sleep(Duration::from_millis(100));
+        }
+
+        // Show completion
+        eprintln!("\r  \x1b[32m✓\x1b[0m {}                    ", message.replace("...", " complete"));
+        thread::sleep(Duration::from_millis(300));
+    }
 
     eprintln!();
 }

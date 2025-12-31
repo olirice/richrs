@@ -97,12 +97,44 @@ def parse_ansi_text(text):
     return segments
 
 
-def render_to_image(text, width=600, font_size=14, padding=20):
+def process_carriage_returns(text):
+    """Process carriage returns to simulate terminal behavior."""
+    lines = text.split('\n')
+    result = []
+    for line in lines:
+        if '\r' in line:
+            # Process carriage returns - later content overwrites earlier
+            parts = line.split('\r')
+            # Start with empty line, each part overwrites from beginning
+            current = ''
+            for part in parts:
+                if part:
+                    # Overwrite from beginning, keeping rest if current is longer
+                    if len(part) >= len(current):
+                        current = part
+                    else:
+                        current = part + current[len(part):]
+            result.append(current)
+        else:
+            result.append(line)
+    return '\n'.join(result)
+
+
+def render_to_image(text, width=600, font_size=14, padding=20, bottom_padding=None):
     """Render ANSI text to a PIL Image."""
+    # Process carriage returns first
+    text = process_carriage_returns(text)
+
     # Clean control sequences
-    text = re.sub(r'\x1b\[\?25[lh]', '', text)
-    text = re.sub(r'\x1b\[\d*[ABCDJK]', '', text)
-    text = re.sub(r'\r', '', text)
+    text = re.sub(r'\x1b\[\?25[lh]', '', text)  # hide/show cursor
+    text = re.sub(r'\x1b\[\d*[ABCDJK]', '', text)  # cursor movement & erase
+    text = re.sub(r'\x1b\[2J', '', text)  # clear screen
+    text = re.sub(r'\x1b\[H', '', text)  # cursor home
+    text = re.sub(r'\x1b\[\d+;\d+H', '', text)  # cursor position
+    text = re.sub(r'\x1b\[\d*[su]', '', text)  # save/restore cursor
+
+    if bottom_padding is None:
+        bottom_padding = padding
 
     try:
         font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', font_size)
@@ -121,7 +153,7 @@ def render_to_image(text, width=600, font_size=14, padding=20):
 
     max_chars = max(len(re.sub(r'\x1b\[[0-9;]*m', '', line)) for line in lines) if lines else 0
     img_width = max(width, max_chars * char_width + padding * 2)
-    img_height = len(lines) * char_height + padding * 2
+    img_height = len(lines) * char_height + padding + bottom_padding
 
     bg_color = (30, 30, 46)
     img = Image.new('RGB', (img_width, img_height), bg_color)
@@ -248,11 +280,12 @@ def record_static(example_name, output_path, width=600):
     print(f"  Saved: {output_path}")
 
 
-def record_animated(example_name, output_path, duration=8, fps=10, width=600, fixed_height=None):
+def record_animated(example_name, output_path, duration=8, fps=10, width=600, fixed_height=None, cmd=None):
     """Record an animated GIF from example output."""
     print(f"Recording animated: {example_name}")
 
-    cmd = f'./target/release/examples/{example_name}'
+    if cmd is None:
+        cmd = f'./target/release/examples/{example_name}'
     frames = capture_frames_from_pty(cmd, duration=duration, fps=fps)
 
     if not frames:
@@ -338,10 +371,10 @@ def main():
 
     # Animated demos (GIF) - (name, output, duration, fps, width, height)
     animated_demos = [
-        ('progress', 'progress.gif', 6, 10, 600, 100),
-        ('spinners', 'spinners.gif', 5, 12, 500, 180),
-        ('status', 'status.gif', 8, 10, 450, 150),
-        ('live', 'live.gif', 8, 10, 400, 180),
+        ('progress', 'progress.gif', 6, 10, 600, 120),
+        ('spinners', 'spinners.gif', 5, 12, 550, 200),
+        ('status', 'status.gif', 8, 10, 550, 200),
+        ('live', 'live.gif', 8, 10, 450, 200),
     ]
 
     # Record static demos
@@ -354,6 +387,11 @@ def main():
     for example, output_file, duration, fps, width, height in animated_demos:
         output_path = str(assets_dir / output_file)
         record_animated(example, output_path, duration=duration, fps=fps, width=width, fixed_height=height)
+
+    # Record main demo (it's a binary, not an example)
+    print("\nRecording main demo...")
+    record_animated('main demo', str(assets_dir / 'demo.gif'), duration=30, fps=8, width=800, fixed_height=600,
+                   cmd='./target/release/richrs')
 
     print("\nAll demos recorded!")
 
