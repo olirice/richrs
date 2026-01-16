@@ -19,6 +19,47 @@ use pulldown_cmark::{Event, HeadingLevel, Parser, Tag, TagEnd};
 use crate::segment::{Segment, Segments};
 use crate::style::Style;
 
+/// Wraps text to fit within the specified width.
+/// Returns a vector of wrapped lines.
+fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
+    let mut result = Vec::new();
+
+    for paragraph in text.split('\n') {
+        if paragraph.is_empty() {
+            result.push(String::new());
+            continue;
+        }
+
+        let mut current_line = String::new();
+        let mut current_width = 0;
+
+        for word in paragraph.split_whitespace() {
+            let word_len = word.chars().count();
+
+            if current_width + word_len + if current_width > 0 { 1 } else { 0 } <= max_width {
+                if current_width > 0 {
+                    current_line.push(' ');
+                    current_width += 1;
+                }
+                current_line.push_str(word);
+                current_width += word_len;
+            } else {
+                if !current_line.is_empty() {
+                    result.push(current_line);
+                }
+                current_line = word.to_string();
+                current_width = word_len;
+            }
+        }
+
+        if !current_line.is_empty() {
+            result.push(current_line);
+        }
+    }
+
+    result
+}
+
 /// Markdown renderer for terminal output.
 ///
 /// Parses Markdown and renders it as styled terminal output.
@@ -145,7 +186,8 @@ impl Markdown {
                         // Add underline for h1/h2
                         if heading_level <= 2 {
                             let char = if heading_level == 1 { '═' } else { '─' };
-                            segments.push(Segment::new(char.to_string().repeat(40)));
+                            let width = if _max_width > 0 {_max_width} else {40};
+                            segments.push(Segment::new(char.to_string().repeat(width)));
                             segments.push(Segment::newline());
                         }
                     }
@@ -205,21 +247,32 @@ impl Markdown {
                         segments.push(Segment::styled("│ ", style.clone()));
                     }
 
-                    if in_code {
-                        if self.code_theme {
-                            style = style.dim();
-                        }
-                        // Indent code blocks
-                        let indented = content
-                            .lines()
-                            .map(|l| format!("    {}", l))
-                            .collect::<Vec<_>>()
-                            .join("\n");
-                        segments.push(Segment::styled(indented, style));
-                    } else if style.is_empty() {
-                        segments.push(Segment::new(content));
+                    let wrapped_lines = if _max_width > 0 {
+                        wrap_text(&content, _max_width)
                     } else {
-                        segments.push(Segment::styled(content, style));
+                        vec![content.clone()]
+                    };
+
+                    for line in wrapped_lines {
+                        if in_code {
+                            if self.code_theme {
+                                style = style.dim();
+                            }
+                            // Indent code blocks
+                            let indented = line
+                                .lines()
+                                .map(|l| format!("    {}", l))
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            segments.push(Segment::styled(indented, style.clone()));
+                            segments.push(Segment::newline())
+                        } else if style.is_empty() {
+                            segments.push(Segment::new(line));
+                            segments.push(Segment::newline())
+                        } else {
+                            segments.push(Segment::styled(line, style.clone()));
+                            segments.push(Segment::newline())
+                        }
                     }
                 }
                 Event::Code(code) => {
@@ -234,7 +287,8 @@ impl Markdown {
                 }
                 Event::Rule => {
                     segments.push(Segment::newline());
-                    segments.push(Segment::new("─".repeat(40)));
+                    let width = if _max_width > 0 {_max_width} else {40};
+                    segments.push(Segment::new("─".repeat(width)));
                     segments.push(Segment::newline());
                 }
                 _ => {}
